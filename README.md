@@ -8,6 +8,17 @@
 #### Compiled successfully on
 - Ubuntu 16.04/4.13.0-39-generic
 
+#### Installation (Auto)
+- Requires `dkms`
+- Simply run `install.sh` as root
+
+#### Installation (Manual)
+As root run the following:
+- make clean
+- make
+- make install
+- modprobe 8821au
+
 #### Thanks to
 - [diederikdehaas](https://github.com/diederikdehaas) for the changes necessary for compiling on kernel versions greater than 4.12.
 
