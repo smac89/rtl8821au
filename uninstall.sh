@@ -9,7 +9,7 @@ echo "##################################################"
 #			Check for root. Exit if not root
 ################################################################################
 if ! [ $EUID = 0 ]; then
-    echo -e "script should be run as \e[1;91mroot\e[0m!!"
+    echo -e "\nScript should be run as \e[1;91mroot\e[0m!!"
     exit 1
 fi
 
@@ -18,6 +18,7 @@ fi
 ################################################################################
 DRV_NAME=
 DRV_VERSION=
+DRV_MODNAME=
 
 PREV_IFS="${IFS}"
 IFS='='
@@ -25,14 +26,11 @@ while read -r name value; do
     case "$name" in
         'PACKAGE_NAME') DRV_NAME="${value//\"/}" ;;
         'PACKAGE_VERSION') DRV_VERSION="${value//\"/}" ;;
+        'BUILT_MODULE_NAME[0]') DRV_MODNAME="${value//\"/}" ;;
     esac
-
-    if ! [[ -z "$DRV_NAME" || -z "$DRV_VERSION" ]]; then
-        break
-    fi
 done <<< "$(cat 'dkms.conf')"
 
-if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" ]]; then
+if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" || -z "$DRV_MODNAME" ]]; then
     echo 'Could not read module info from dkms.conf. Make sure it exists'
     exit 1
 fi
@@ -42,9 +40,9 @@ IFS="${PREV_IFS}"
 ################################################################################
 #            Uninstall the module
 ################################################################################
-modprobe -r ${DRV_NAME}
 dkms remove -m ${DRV_NAME} -v ${DRV_VERSION} --all
+modprobe -r ${DRV_MODNAME}
 
 echo "##################################################"
-echo "The Uninstall Script is \e[32mcompleted!"
+echo -e "The Uninstall Script is \e[32mcompleted!"
 echo "##################################################"

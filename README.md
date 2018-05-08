@@ -13,3 +13,7 @@
 
   See his [rtl8812au](https://github.com/diederikdehaas/rtl8812AU) repo
 - [masterzorag](https://github.com/masterzorag/RTL8192EU-linux/pull/4/commits/6833e247c0b5f32b736c30c8935ef9a709544bc4)'s PR for pointing me in the right direction
+
+#### Useful links
+- [How to build a kernel module](http://xmodulo.com/build-kernel-module-dkms-linux.html)
+- [Generate a deb for the driver](https://wiki.kubuntu.org/Kernel/Dev/DKMSPackaging#Generate_DKMS_deb)
