@@ -1,6 +1,15 @@
 # rtl8821AU
 
-#### This repository contains drivers for RTL8821au version 5.2.6.2_23547.20170814_COEX20170206-6760.
+### This repository contains drivers for `RTL8821au`.
 
-#### The files were extracted from the drivers that came with my wireless adapter.
+#### Supports kernel versions
+- `>= 4.12` - only tested `4.13`, *but should theoretically work for as early as **2.4***
 
+#### Compiled successfully on
+- Ubuntu 16.04/4.13.0-39-generic
+
+#### Thanks to
+- [diederikdehaas](https://github.com/diederikdehaas) for the changes necessary for compiling on kernel versions greater than 4.12.
+
+  See his [rtl8812au](https://github.com/diederikdehaas/rtl8812AU) repo
+- [masterzorag](https://github.com/masterzorag/RTL8192EU-linux/pull/4/commits/6833e247c0b5f32b736c30c8935ef9a709544bc4)'s PR for pointing me in the right direction
