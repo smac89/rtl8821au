@@ -3,7 +3,7 @@
 ### This repository contains drivers for `RTL8821au`.
 
 #### Supports kernel versions
-- `>= 4.12` - only tested `4.13`, *but should theoretically work for as early as **2.4***
+- 2.4 ➜ 4.13 - only tested `4.13`, *but should theoretically work for as early as **2.4***
 
 #### Compiled successfully on
 - Ubuntu 16.04/4.13.0-39-generic
