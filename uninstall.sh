@@ -44,5 +44,5 @@ dkms remove -m ${DRV_NAME} -v ${DRV_VERSION} --all
 modprobe -r ${DRV_MODNAME}
 
 echo "##################################################"
-echo -e "The Uninstall Script is \e[32mcompleted!"
+echo -e "The Uninstall Script is \e[32mcompleted!\e[0m"
 echo "##################################################"
