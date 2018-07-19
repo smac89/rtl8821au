@@ -40,17 +40,19 @@ IFS="${PREV_IFS}"
 ################################################################################
 #            Copy the driver sources to the /usr/src
 ################################################################################
+echo -e "Archiving the current repository"
+
 mkdir -p /usr/src/"${DRV_NAME}-${DRV_VERSION}"
 branch="$(git symbolic-ref --short HEAD)"
-git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -x -C /usr/src/"${DRV_NAME}-${DRV_VERSION}"
+git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /usr/src/"${DRV_NAME}-${DRV_VERSION}"
 
 ################################################################################
 #			Start dkms
 ################################################################################
-dkms add -m ${DRV_NAME} -v ${DRV_VERSION}
-dkms build -m ${DRV_NAME} -v ${DRV_VERSION}
-dkms install -m ${DRV_NAME} -v ${DRV_VERSION}
-modprobe ${DRV_MODNAME}
+dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
+dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
+dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
+modprobe ${DRV_MODNAME} --verbose -S 4.15.0-24-generic
 
 echo "##################################################"
 echo -e "The Install Script is \e[32mcompleted!\e[0m"
