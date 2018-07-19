@@ -1,0 +1,10 @@
+dist: trusty
+sudo: required
+
+jobs:
+  include:
+    - stage: download 📥
+
+env:
+  global:
+    - MAKEFLAGS="-j 2"

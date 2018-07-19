@@ -1,0 +1,6 @@
+# For git archive
+CMakeLists.txt  export-ignore
+README.md       export-ignore
+cmake*/**       export-ignore
+.idea/          export-ignore
+*install.sh     export-ignore

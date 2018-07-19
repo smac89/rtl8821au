@@ -41,7 +41,8 @@ IFS="${PREV_IFS}"
 #            Copy the driver sources to the /usr/src
 ################################################################################
 mkdir -p /usr/src/"${DRV_NAME}-${DRV_VERSION}"
-git archive driver-${DRV_VERSION} | tar -x -C /usr/src/"${DRV_NAME}-${DRV_VERSION}"
+branch="$(git symbolic-ref --short HEAD)"
+git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -x -C /usr/src/"${DRV_NAME}-${DRV_VERSION}"
 
 ################################################################################
 #			Start dkms
