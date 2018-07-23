@@ -53,10 +53,10 @@ git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /u
 ################################################################################
 #			Start dkms
 ################################################################################
-dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
-dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
-dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
-modprobe ${DRV_MODNAME} --verbose -S 4.15.0-24-generic
+dkms add -m ${DRV_NAME} -v ${DRV_VERSION}
+dkms build -m ${DRV_NAME} -v ${DRV_VERSION}
+dkms install -m ${DRV_NAME} -v ${DRV_VERSION}
+modprobe ${DRV_MODNAME} --verbose
 
 echo "##################################################"
 echo -e "The Install Script is \e[32mcompleted!\e[0m"
