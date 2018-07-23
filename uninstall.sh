@@ -43,6 +43,7 @@ IFS="${PREV_IFS}"
 ################################################################################
 dkms remove -m ${DRV_NAME} -v ${DRV_VERSION} --all
 modprobe -r ${DRV_MODNAME}
+rmmod ${DRV_MODNAME}
 
 echo "##################################################"
 echo -e "The Uninstall Script is \e[32mcompleted!\e[0m"
