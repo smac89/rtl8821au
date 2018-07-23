@@ -1,5 +1,8 @@
 # Realtek RTL8812AU Driver
 
+**NOTE: The contents of this branch were copied verbatim from https://github.com/zebulon2/rtl8812au
+in order to have a working driver version for kernel version >= 4.15.**
+
 ## DKMS
 This driver can be installed using [DKMS](http://linux.dell.com/dkms/). This is a system which will automatically recompile and install a kernel module when a new kernel gets installed or updated. To make use of DKMS, install the `dkms` package, which on Debian (based) systems is done like this:
 ```
