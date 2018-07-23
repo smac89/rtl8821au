@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "##################################################"
 echo "Realtek Wi-Fi driver Auto Installation Script"
 echo "November, 21 2011 v1.1.0"
@@ -26,7 +28,8 @@ while read -r name value; do
     case "$name" in
         'PACKAGE_NAME') DRV_NAME="${value//\"/}" ;;
         'PACKAGE_VERSION') DRV_VERSION="${value//\"/}" ;;
-        'BUILT_MODULE_NAME[0]') DRV_MODNAME="${value//\"/}" ;;
+        'DEST_MODULE_NAME[0]') DRV_MODNAME="${value//\"/}" ;;
+        'BUILT_MODULE_NAME[0]') if [ -z DRV_MODNAME ]; then DRV_MODNAME="${value//\"/}"; fi ;;
     esac
 done <<< "$(cat 'dkms.conf')"
 
@@ -57,3 +60,5 @@ modprobe ${DRV_MODNAME} --verbose -S 4.15.0-24-generic
 echo "##################################################"
 echo -e "The Install Script is \e[32mcompleted!\e[0m"
 echo "##################################################"
+
+set +e

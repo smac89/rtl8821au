@@ -26,7 +26,8 @@ while read -r name value; do
     case "$name" in
         'PACKAGE_NAME') DRV_NAME="${value//\"/}" ;;
         'PACKAGE_VERSION') DRV_VERSION="${value//\"/}" ;;
-        'BUILT_MODULE_NAME[0]') DRV_MODNAME="${value//\"/}" ;;
+        'DEST_MODULE_NAME[0]') DRV_MODNAME="${value//\"/}" ;;
+        'BUILT_MODULE_NAME[0]') if [ -z DRV_MODNAME ]; then DRV_MODNAME="${value//\"/}"; fi ;;
     esac
 done <<< "$(cat 'dkms.conf')"
 
