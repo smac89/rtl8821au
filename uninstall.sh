@@ -24,10 +24,11 @@ PREV_IFS="${IFS}"
 IFS='='
 while read -r name value; do
     case "$name" in
-        'PACKAGE_NAME') DRV_NAME="${value//\"/}" ;;
-        'PACKAGE_VERSION') DRV_VERSION="${value//\"/}" ;;
-        'DEST_MODULE_NAME[0]') DRV_MODNAME="${value//\"/}" ;;
-        'BUILT_MODULE_NAME[0]') if [ -z DRV_MODNAME ]; then DRV_MODNAME="${value//\"/}"; fi ;;
+        clean_value="${value//\"/}"
+        'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
+        'PACKAGE_VERSION') DRV_VERSION="$clean_value" ;;
+        'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
+        'BUILT_MODULE_NAME[0]') if [ -z "$DRV_MODNAME" ]; then DRV_MODNAME="$clean_value"; fi ;;
     esac
 done <<< "$(cat 'dkms.conf')"
 
