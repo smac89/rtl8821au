@@ -26,22 +26,23 @@
 
 /*---------------------------End Define Parameters-------------------------------*/
 #if !(DM_ODM_SUPPORT_TYPE & ODM_AP)
-void
-do_iqk_8821a(
-	struct PHY_DM_STRUCT	*p_dm_odm,
-	u8		delta_thermal_index,
-	u8		thermal_value,
-	u8		threshold
-);
-void
-phy_iq_calibrate_8821a(
-	struct PHY_DM_STRUCT	*p_dm_odm,
-	boolean	is_recovery
+void 
+DoIQK_8821A(
+	PDM_ODM_T	pDM_Odm,
+	u1Byte 		DeltaThermalIndex,
+	u1Byte		ThermalValue,	
+	u1Byte 		Threshold
+	);
+void	
+PHY_IQCalibrate_8821A(	
+	IN	PDM_ODM_T	pDM_Odm,	
+	IN	BOOLEAN 	bReCovery
 );
 #else
-void
-_phy_iq_calibrate_8821a(
-	struct PHY_DM_STRUCT		*p_dm_odm
-);
+VOID	
+phy_IQCalibrate_8821A(
+	IN PDM_ODM_T		pDM_Odm
+	);
 #endif
-#endif	/*  #ifndef __PHYDM_IQK_8821A_H__ */
+#endif	// #ifndef __PHYDM_IQK_8821A_H__								
+

@@ -301,6 +301,7 @@ void SetHwReg8814A(PADAPTER padapter, u8 variable, u8 *pval);
 void GetHwReg8814A(PADAPTER padapter, u8 variable, u8 *pval);
 u8 SetHalDefVar8814A(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
 u8 GetHalDefVar8814A(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
+s32 c2h_id_filter_ccx_8814a(u8 *buf);
 void rtl8814_set_hal_ops(struct hal_ops *pHalFunc);
 void init_hal_spec_8814a(_adapter *adapter);
 

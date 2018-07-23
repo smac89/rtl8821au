@@ -38,12 +38,11 @@
  * We now define the following channels as the max channels in each channel plan.
  * 2G, total 14 chnls
  * {1,2,3,4,5,6,7,8,9,10,11,12,13,14}
- * 5G, total 25 chnls
- * {36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,144,149,153,157,161,165}
- */
-#define	MAX_CHANNEL_NUM_2G	14
-#define	MAX_CHANNEL_NUM_5G	25
-#define	MAX_CHANNEL_NUM		(MAX_CHANNEL_NUM_2G + MAX_CHANNEL_NUM_5G)
+ * 5G, total 24 chnls
+ * {36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140,149,153,157,161,165} */
+#define	MAX_CHANNEL_NUM_2G				14
+#define	MAX_CHANNEL_NUM_5G				24
+#define	MAX_CHANNEL_NUM					38/* 14+24 */
 
 #define CENTER_CH_2G_40M_NUM	9
 #define CENTER_CH_2G_NUM		14
@@ -215,16 +214,8 @@ typedef	enum _RT_RF_TYPE_DEFINITION {
 	RF_3T4R	= 7,
 	RF_4T4R	= 8,
 
-	RF_TYPE_AUTO,
+	RF_MAX_TYPE = 0xF, /* u1Byte */
 } RT_RF_TYPE_DEF_E;
-
-#define RF_TYPE_VALID(rf_type) (rf_type < RF_TYPE_AUTO)
-
-extern const u8 _rf_type_to_rf_tx_cnt[];
-#define rf_type_to_rf_tx_cnt(rf_type) (RF_TYPE_VALID(rf_type) ? _rf_type_to_rf_tx_cnt[rf_type] : 0)
-
-extern const u8 _rf_type_to_rf_rx_cnt[];
-#define rf_type_to_rf_rx_cnt(rf_type) (RF_TYPE_VALID(rf_type) ? _rf_type_to_rf_rx_cnt[rf_type] : 0)
 
 int rtw_ch2freq(int chan);
 int rtw_freq2ch(int freq);
@@ -238,7 +229,6 @@ bool rtw_chbw_to_freq_range(u8 ch, u8 bw, u8 offset, u32 *hi, u32 *lo);
 #define RTW_MODULE_RTL8723BE_HMC_M2		BIT5 /* RTL8723BE(HMC + M.2) */
 #define RTW_MODULE_RTL8723BS_NGFF1216	BIT6 /* RTL8723BS(NGFF1216) */
 #define RTW_MODULE_RTL8192EEBT_HMC_M2	BIT7 /* RTL8192EEBT(8192EE+8761AU)_(HMC + M.2) */
-#define RTW_MODULE_RTL8723DE_NGFF1630	BIT8 /* RTL8723DE(NGFF1630) */
 
 #define IS_ALPHA2_NO_SPECIFIED(_alpha2) ((*((u16 *)(_alpha2))) == 0xFFFF)
 
@@ -249,7 +239,7 @@ struct country_chplan {
 	u8 en_11ac;
 #endif
 #if RTW_DEF_MODULE_REGULATORY_CERT
-	u16 def_module_flags; /* RTW_MODULE_RTLXXX */
+	u8 def_module_flags; /* RTW_MODULE_RTLXXX */
 #endif
 };
 

@@ -127,13 +127,10 @@ PHY_SetSwChnlBWMode8188F(
 	IN	u8					Offset80
 );
 
-VOID phy_set_rf_path_switch_8188f(
+VOID PHY_SetRFPathSwitch_8188F(
 	IN	PADAPTER	pAdapter,
-	IN	bool		bMain
+	IN	BOOLEAN		bMain
 );
-
-void BBTurnOnBlock_8188F(_adapter *adapter);
-
 /*--------------------------Exported Function prototype End---------------------*/
 
 #endif

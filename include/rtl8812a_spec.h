@@ -257,6 +257,18 @@
 #define	AcmHw_ViqStatus_8812			BIT(6)
 #define	AcmHw_BeqStatus_8812			BIT(7)
 
+/* ********************************************************
+* General definitions
+* ******************************************************** */
+
+#define MACID_NUM_8812A 128
+#define SEC_CAM_ENT_NUM_8812A 64
+#define HW_PORT_NUM_8812A	2
+#define NSS_NUM_8812A 2
+#define BAND_CAP_8812A (BAND_CAP_2G | BAND_CAP_5G)
+#define BW_CAP_8812A (BW_CAP_20M | BW_CAP_40M | BW_CAP_80M)
+#define PROTO_CAP_8812A (PROTO_CAP_11B | PROTO_CAP_11G | PROTO_CAP_11N | PROTO_CAP_11AC)
+
 #endif /* __RTL8812A_SPEC_H__ */
 
 #ifdef CONFIG_RTL8821A

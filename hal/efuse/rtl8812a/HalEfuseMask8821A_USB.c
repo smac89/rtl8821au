@@ -64,6 +64,7 @@ u1Byte Array_MP_8821A_MUSB[] = {
 	0x00,
 	0x00,
 	0x00,
+
 };
 
 u2Byte

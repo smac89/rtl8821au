@@ -143,9 +143,9 @@ typedef struct _RT_FIRMWARE_8812 {
 #define BCNQ_PAGE_NUM_8812		0x07
 
 /* For WoWLan , more reserved page
- * ARP Rsp:1, RWC:1, GTK Info:1,GTK RSP:1,GTK EXT MEM:1, AOAC rpt: 1,PNO: 6 */
+ * ARP Rsp:1, RWC:1, GTK Info:1,GTK RSP:1,GTK EXT MEM:1, PNO: 6 */
 #ifdef CONFIG_WOWLAN
-	#define WOWLAN_PAGE_NUM_8812	0x06
+	#define WOWLAN_PAGE_NUM_8812	0x05
 #else
 	#define WOWLAN_PAGE_NUM_8812	0x00
 #endif
@@ -333,6 +333,7 @@ void SetHwReg8812A(PADAPTER padapter, u8 variable, u8 *pval);
 void GetHwReg8812A(PADAPTER padapter, u8 variable, u8 *pval);
 u8 SetHalDefVar8812A(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
 u8 GetHalDefVar8812A(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval);
+s32 c2h_id_filter_ccx_8812a(u8 *buf);
 void rtl8812_set_hal_ops(struct hal_ops *pHalFunc);
 void init_hal_spec_8812a(_adapter *adapter);
 void init_hal_spec_8821a(_adapter *adapter);

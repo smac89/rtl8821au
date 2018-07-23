@@ -68,6 +68,10 @@
 	#include <linux/limits.h>
 #endif
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4,11,0))
+	#include <linux/sched/signal.h>
+#endif
+
 #ifdef RTK_DMP_PLATFORM
 	#if (LINUX_VERSION_CODE > KERNEL_VERSION(2, 6, 12))
 		#include <linux/pageremap.h>
@@ -81,11 +85,7 @@
 
 /* Monitor mode */
 #include <net/ieee80211_radiotap.h>
-
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24))
-	#include <linux/ieee80211.h>
-#endif
-
+#include <linux/ieee80211.h>
 #ifdef CONFIG_IOCTL_CFG80211
 	/*	#include <linux/ieee80211.h> */
 	#include <net/cfg80211.h>
@@ -130,17 +130,6 @@
 	#endif
 #endif
 
-#if defined(CONFIG_RTW_GRO) && (!defined(CONFIG_RTW_NAPI))
-
-	#error "Enable NAPI before enable GRO\n"
-
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,29) && defined(CONFIG_RTW_NAPI))
-
-	#error "Linux Kernel version too old (should newer than 2.6.29)\n"
-
-#endif
-
-
 typedef struct	semaphore _sema;
 typedef	spinlock_t	_lock;
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37))
@@ -148,7 +137,15 @@ typedef	spinlock_t	_lock;
 #else
 	typedef struct semaphore	_mutex;
 #endif
-typedef struct timer_list _timer;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	typedef struct legacy_timer_emu {
+		struct timer_list t;
+		void (*function)(unsigned long);
+		unsigned long data;
+	} _timer;
+#else
+	typedef struct timer_list _timer;
+#endif
 
 struct	__queue	{
 	struct	list_head	queue;
@@ -281,22 +278,41 @@ __inline static void rtw_list_delete(_list *plist)
 
 #define RTW_TIMER_HDL_ARGS void *FunctionContext
 
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+static void legacy_timer_emu_func(struct timer_list *t)
+{
+	struct legacy_timer_emu *lt = from_timer(lt, t, t);
+	lt->function(lt->data);
+}
+#endif
 __inline static void _init_timer(_timer *ptimer, _nic_hdl nic_hdl, void *pfunc, void *cntx)
 {
 	/* setup_timer(ptimer, pfunc,(u32)cntx);	 */
 	ptimer->function = pfunc;
 	ptimer->data = (unsigned long)cntx;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	timer_setup(&ptimer->t, legacy_timer_emu_func, 0);
+#else
 	init_timer(ptimer);
+#endif
 }
 
 __inline static void _set_timer(_timer *ptimer, u32 delay_time)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	mod_timer(&ptimer->t, (jiffies+(delay_time*HZ/1000)));
+#else
 	mod_timer(ptimer , (jiffies + (delay_time * HZ / 1000)));
+#endif
 }
 
 __inline static void _cancel_timer(_timer *ptimer, u8 *bcancelled)
 {
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+	del_timer_sync(&ptimer->t);
+#else
 	del_timer_sync(ptimer);
+#endif
 	*bcancelled = 1;
 }
 
@@ -425,11 +441,11 @@ static inline int rtw_merge_string(char *dst, int dst_len, const char *src1, con
 #define NDEV_FMT "%s"
 #define NDEV_ARG(ndev) ndev->name
 #define ADPT_FMT "%s"
-#define ADPT_ARG(adapter) (adapter->pnetdev ? adapter->pnetdev->name : NULL)
+#define ADPT_ARG(adapter) adapter->pnetdev->name
 #define FUNC_NDEV_FMT "%s(%s)"
 #define FUNC_NDEV_ARG(ndev) __func__, ndev->name
 #define FUNC_ADPT_FMT "%s(%s)"
-#define FUNC_ADPT_ARG(adapter) __func__, (adapter->pnetdev ? adapter->pnetdev->name : NULL)
+#define FUNC_ADPT_ARG(adapter) __func__, adapter->pnetdev->name
 
 struct rtw_netdev_priv_indicator {
 	void *priv;

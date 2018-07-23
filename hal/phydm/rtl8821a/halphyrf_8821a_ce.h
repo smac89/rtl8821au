@@ -23,29 +23,30 @@
 
 /*--------------------------Define Parameters-------------------------------*/
 
-void configure_txpower_track_8821a(
-	struct _TXPWRTRACK_CFG	*p_config
+void ConfigureTxpowerTrack_8821A(
+	PTXPWRTRACK_CFG	pConfig
+	);
+
+VOID
+ODM_TxPwrTrackSetPwr8821A(
+	IN	PVOID		pDM_VOID,
+	PWRTRACK_METHOD 	Method,
+	u1Byte 				RFPath,
+	u1Byte 				ChannelMappedIndex
+	);
+
+VOID
+PHY_LCCalibrate_8821A(
+	IN	PVOID		pDM_VOID
 );
 
-void
-odm_tx_pwr_track_set_pwr8821a(
-	void		*p_dm_void,
-	enum pwrtrack_method	method,
-	u8				rf_path,
-	u8				channel_mapped_index
+VOID
+GetDeltaSwingTable_8821A(
+	IN	PVOID		pDM_VOID,
+	OUT pu1Byte 			*TemperatureUP_A,
+	OUT pu1Byte 			*TemperatureDOWN_A,
+	OUT pu1Byte 			*TemperatureUP_B,
+	OUT pu1Byte 			*TemperatureDOWN_B	
 );
+#endif	// #ifndef __HAL_PHY_RF_8821A_H__								
 
-void
-phy_lc_calibrate_8821a(
-	void		*p_dm_void
-);
-
-void
-get_delta_swing_table_8821a(
-	void		*p_dm_void,
-	u8 **temperature_up_a,
-	u8 **temperature_down_a,
-	u8 **temperature_up_b,
-	u8 **temperature_down_b
-);
-#endif	/*  #ifndef __HAL_PHY_RF_8821A_H__ */

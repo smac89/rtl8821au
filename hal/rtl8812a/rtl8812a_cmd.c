@@ -63,7 +63,7 @@ static u8 _is_fw_read_cmd_down(_adapter *padapter, u8 msgbox_num)
 *|31 - 0	  |
 *|ext_msg|
 ******************************************/
-s32 fill_h2c_cmd_8812(PADAPTER padapter, u8 ElementID, u32 CmdLen, u8 *pCmdBuffer)
+s32 FillH2CCmd_8812(PADAPTER padapter, u8 ElementID, u32 CmdLen, u8 *pCmdBuffer)
 {
 	u8 h2c_box_num;
 	u32	msgbox_addr;
@@ -80,7 +80,7 @@ s32 fill_h2c_cmd_8812(PADAPTER padapter, u8 ElementID, u32 CmdLen, u8 *pCmdBuffe
 
 
 	if (padapter->bFWReady == _FALSE) {
-		/* RTW_INFO("fill_h2c_cmd_8812(): return H2C cmd because fw is not ready\n"); */
+		/* RTW_INFO("FillH2CCmd_8812(): return H2C cmd because fw is not ready\n"); */
 		return ret;
 	}
 
@@ -156,7 +156,7 @@ u8 rtl8812_set_rssi_cmd(_adapter *padapter, u8 *param)
 
 	*((u32 *) param) = cpu_to_le32(*((u32 *) param));
 
-	fill_h2c_cmd_8812(padapter, H2C_8812_RSSI_REPORT, 4, param);
+	FillH2CCmd_8812(padapter, H2C_8812_RSSI_REPORT, 4, param);
 
 
 	return res;
@@ -198,7 +198,7 @@ Get_RA_ShortGI_8812(
 
 #ifdef CONFIG_80211AC_VHT
 	if (bShortGI &&
-	    is_supported_vht(psta->wireless_mode) &&
+	    IsSupportedVHT(psta->wireless_mode) &&
 	    (pmlmeinfo->assoc_AP_vendor == HT_IOT_PEER_REALTEK_JAGUAR_CCUTAP) &&
 	    TEST_FLAG(psta->vhtpriv.ldpc_cap, LDPC_VHT_ENABLE_TX)
 	   ) {
@@ -212,7 +212,7 @@ Get_RA_ShortGI_8812(
 
 
 void
-set_ra_ldpc_8812(
+Set_RA_LDPC_8812(
 	struct sta_info	*psta,
 	BOOLEAN			bLDPC
 )
@@ -225,7 +225,7 @@ set_ra_ldpc_8812(
 			SET_FLAG(psta->vhtpriv.ldpc_cap, LDPC_VHT_ENABLE_TX);
 		else
 			CLEAR_FLAG(psta->vhtpriv.ldpc_cap, LDPC_VHT_ENABLE_TX);
-	} else if (is_supported_ht(psta->wireless_mode) || is_supported_vht(psta->wireless_mode)) {
+	} else if (IsSupportedHT(psta->wireless_mode) || IsSupportedVHT(psta->wireless_mode)) {
 		if (bLDPC && TEST_FLAG(psta->htpriv.ldpc_cap, LDPC_HT_CAP_TX))
 			SET_FLAG(psta->htpriv.ldpc_cap, LDPC_HT_ENABLE_TX);
 		else
@@ -251,12 +251,12 @@ Get_RA_LDPC_8812(
 			bLDPC = 0;
 		else {
 #ifdef CONFIG_80211AC_VHT
-			if (is_supported_vht(psta->wireless_mode)) {
+			if (IsSupportedVHT(psta->wireless_mode)) {
 				if (TEST_FLAG(psta->vhtpriv.ldpc_cap, LDPC_VHT_CAP_TX))
 					bLDPC = 1;
 				else
 					bLDPC = 0;
-			} else if (is_supported_ht(psta->wireless_mode)) {
+			} else if (IsSupportedHT(psta->wireless_mode)) {
 				if (TEST_FLAG(psta->htpriv.ldpc_cap, LDPC_HT_CAP_TX))
 					bLDPC = 1;
 				else
@@ -276,12 +276,11 @@ void rtl8812_set_raid_cmd(PADAPTER padapter, u32 bitmap, u8 *arg, u8 bw)
 	struct macid_ctl_t *macid_ctl = &padapter->dvobj->macid_ctl;
 	struct sta_info	*psta = NULL;
 	u8 macid, init_rate, raid, shortGIrate = _FALSE;
-	u8 ignore_bw = _FALSE;
+
 
 	macid = arg[0];
 	raid = arg[1];
-	shortGIrate = arg[2] & 0x0F;
-	ignore_bw = arg[2] >> 4;
+	shortGIrate = arg[2];
 	init_rate = arg[3];
 
 	if (macid < macid_ctl->num)
@@ -300,16 +299,15 @@ void rtl8812_set_raid_cmd(PADAPTER padapter, u32 bitmap, u8 *arg, u8 bw)
 		H2CCommand[0] = macid;
 		H2CCommand[1] = (raid & 0x1F) | (shortGIrate ? 0x80 : 0x00) ;
 		H2CCommand[2] = (bw & 0x3) | Get_RA_LDPC_8812(psta) | Get_VHT_ENI(0, psta->wireless_mode, bitmap);
-		if (ignore_bw)
-			H2CCommand[2] |= BIT(3);
+
 		/* DisableTXPowerTraining */
 		if (pHalData->bDisableTXPowerTraining) {
 			H2CCommand[2] |= BIT6;
 			RTW_INFO("%s,Disable PWT by driver\n", __FUNCTION__);
 		} else {
-			struct PHY_DM_STRUCT	*pDM_OutSrc = &pHalData->odmpriv;
+			PDM_ODM_T	pDM_OutSrc = &pHalData->odmpriv;
 
-			if (pDM_OutSrc->is_disable_power_training) {
+			if (pDM_OutSrc->bDisablePowerTraining) {
 				H2CCommand[2] |= BIT6;
 				RTW_INFO("%s,Disable PWT by DM\n", __FUNCTION__);
 			}
@@ -322,7 +320,7 @@ void rtl8812_set_raid_cmd(PADAPTER padapter, u32 bitmap, u8 *arg, u8 bw)
 
 		/* RTW_INFO("rtl8812_set_raid_cmd, bitmap=0x%x, mac_id=0x%x, raid=0x%x, shortGIrate=%x\n", bitmap, macid, raid, shortGIrate); */
 
-		fill_h2c_cmd_8812(padapter, H2C_8812_RA_MASK, 7, H2CCommand);
+		FillH2CCmd_8812(padapter, H2C_8812_RA_MASK, 7, H2CCommand);
 	}
 
 	if (shortGIrate == _TRUE)
@@ -336,7 +334,7 @@ void rtl8812_set_raid_cmd(PADAPTER padapter, u32 bitmap, u8 *arg, u8 bw)
 #ifdef CONFIG_FWLPS_IN_IPS
 void rtl8812_set_FwPwrModeInIPS_cmd(PADAPTER padapter, u8 cmd_param)
 {
-	fill_h2c_cmd_8812(padapter, H2C_8812_INACTIVE_PS, 1, &cmd_param);
+	FillH2CCmd_8812(padapter, H2C_8812_INACTIVE_PS, 1, &cmd_param);
 }
 #endif
 
@@ -420,7 +418,7 @@ void rtl8812_set_FwPwrMode_cmd(PADAPTER padapter, u8 PSMode)
 		rtw_btcoex_RecordPwrMode(padapter, u1H2CSetPwrMode, sizeof(u1H2CSetPwrMode));
 #endif /* CONFIG_BT_COEXIST */
 	/* RTW_INFO("u1H2CSetPwrMode="MAC_FMT"\n", MAC_ARG(u1H2CSetPwrMode)); */
-	fill_h2c_cmd_8812(padapter, H2C_8812_SETPWRMODE, sizeof(u1H2CSetPwrMode), u1H2CSetPwrMode);
+	FillH2CCmd_8812(padapter, H2C_8812_SETPWRMODE, sizeof(u1H2CSetPwrMode), u1H2CSetPwrMode);
 
 }
 
@@ -438,7 +436,7 @@ void rtl8812_set_BcnEarly_C2H_Rpt_cmd(PADAPTER padapter, u8 enable)
 	SET_8812_H2CCMD_PWRMODE_PARM_BCN_EARLY_C2H_RPT(u1H2CSetPwrMode, enable);
 	SET_8812_H2CCMD_PWRMODE_PARM_PWR_STATE(u1H2CSetPwrMode, 0x0C);
 	SET_8812_H2CCMD_PWRMODE_PARM_BYTE5(u1H2CSetPwrMode, 0);
-	fill_h2c_cmd_8812(padapter, H2C_8812_SETPWRMODE, sizeof(u1H2CSetPwrMode), u1H2CSetPwrMode);
+	FillH2CCmd_8812(padapter, H2C_8812_SETPWRMODE, sizeof(u1H2CSetPwrMode), u1H2CSetPwrMode);
 }
 #endif
 #endif
@@ -467,7 +465,7 @@ void ConstructBeacon(_adapter *padapter, u8 *pframe, u32 *pLength)
 
 	SetSeqNum(pwlanhdr, 0/*pmlmeext->mgnt_seq*/);
 	/* pmlmeext->mgnt_seq++; */
-	set_frame_sub_type(pframe, WIFI_BEACON);
+	SetFrameSubType(pframe, WIFI_BEACON);
 
 	pframe += sizeof(struct rtw_ieee80211_hdr_3addr);
 	pktlen = sizeof(struct rtw_ieee80211_hdr_3addr);
@@ -556,10 +554,10 @@ void ConstructPSPoll(_adapter *padapter, u8 *pframe, u32 *pLength)
 	fctrl = &(pwlanhdr->frame_ctl);
 	*(fctrl) = 0;
 	SetPwrMgt(fctrl);
-	set_frame_sub_type(pframe, WIFI_PSPOLL);
+	SetFrameSubType(pframe, WIFI_PSPOLL);
 
 	/* AID. */
-	set_duration(pframe, (pmlmeinfo->aid | 0xc000));
+	SetDuration(pframe, (pmlmeinfo->aid | 0xc000));
 
 	/* BSSID. */
 	_rtw_memcpy(pwlanhdr->addr1, get_my_bssid(&(pmlmeinfo->network)), ETH_ALEN);
@@ -624,7 +622,7 @@ void ConstructNullFunctionData(
 	if (bQoS == _TRUE) {
 		struct rtw_ieee80211_hdr_3addr_qos *pwlanqoshdr;
 
-		set_frame_sub_type(pframe, WIFI_QOS_DATA_NULL);
+		SetFrameSubType(pframe, WIFI_QOS_DATA_NULL);
 
 		pwlanqoshdr = (struct rtw_ieee80211_hdr_3addr_qos *)pframe;
 		SetPriority(&pwlanqoshdr->qc, AC);
@@ -632,7 +630,7 @@ void ConstructNullFunctionData(
 
 		pktlen = sizeof(struct rtw_ieee80211_hdr_3addr_qos);
 	} else {
-		set_frame_sub_type(pframe, WIFI_DATA_NULL);
+		SetFrameSubType(pframe, WIFI_DATA_NULL);
 
 		pktlen = sizeof(struct rtw_ieee80211_hdr_3addr);
 	}
@@ -670,14 +668,14 @@ static void ConstructGTKResponse(
 	/* MAC Header. */
 	/* ------------------------------------------------------------------------- */
 	SetFrameType(fctrl, WIFI_DATA);
-	/* set_frame_sub_type(fctrl, 0); */
+	/* SetFrameSubType(fctrl, 0); */
 	SetToDs(fctrl);
 	_rtw_memcpy(pwlanhdr->addr1, get_my_bssid(&(pmlmeinfo->network)), ETH_ALEN);
 	_rtw_memcpy(pwlanhdr->addr2, adapter_mac_addr(padapter), ETH_ALEN);
 	_rtw_memcpy(pwlanhdr->addr3, get_my_bssid(&(pmlmeinfo->network)), ETH_ALEN);
 
 	SetSeqNum(pwlanhdr, 0);
-	set_duration(pwlanhdr, 0);
+	SetDuration(pwlanhdr, 0);
 
 #ifdef CONFIG_WAPI_SUPPORT
 	*pLength = sMacHdrLng;
@@ -960,7 +958,7 @@ static void SetFwRsvdPagePkt_8812(PADAPTER padapter, BOOLEAN bDLFinished)
 
 	if (!bDLFinished) {
 		RTW_INFO("%s: Set RSVD page location to Fw ,TotalPacketLen(%d), TotalPageNum(%d)\n", __FUNCTION__, TotalPacketLen, TotalPageNum);
-		fill_h2c_cmd_8812(padapter, H2C_8812_RSVDPAGE, 5, RsvdPageLoc);
+		FillH2CCmd_8812(padapter, H2C_8812_RSVDPAGE, 5, RsvdPageLoc);
 	}
 
 	return;
@@ -1048,7 +1046,7 @@ void rtl8812_set_p2p_ps_offload_cmd(_adapter *padapter, u8 p2p_ps_state)
 	}
 
 	RTW_INFO("P2P_PS_OFFLOAD : %x\n", p2p_ps_offload[0]);
-	fill_h2c_cmd_8812(padapter, H2C_8812_P2P_PS_OFFLOAD, 1, p2p_ps_offload);
+	FillH2CCmd_8812(padapter, H2C_8812_P2P_PS_OFFLOAD, 1, p2p_ps_offload);
 #endif
 
 
@@ -1073,7 +1071,7 @@ u8 rtl8812_reset_tsf(_adapter *padapter, u8 reset_port)
 		buf[1] = 0x1;
 	}
 
-	ret = fill_h2c_cmd_8812(padapter, H2C_8812_TSF_RESET, 2, buf);
+	ret = FillH2CCmd_8812(padapter, H2C_8812_TSF_RESET, 2, buf);
 
 
 	return res;
@@ -1119,7 +1117,7 @@ static void rtl8812_set_FwRsvdPage_cmd(PADAPTER padapter, PRSVDPAGE_LOC rsvdpage
 	SET_H2CCMD_RSVDPAGE_LOC_BT_QOS_NULL_DATA(u1H2CRsvdPageParm, rsvdpageloc->LocBTQosNull);
 
 	RTW_DBG_DUMP("u1H2CRsvdPageParm:", u1H2CRsvdPageParm, H2C_RSVDPAGE_LOC_LEN);
-	fill_h2c_cmd_8812(padapter, H2C_RSVD_PAGE, H2C_RSVDPAGE_LOC_LEN, u1H2CRsvdPageParm);
+	FillH2CCmd_8812(padapter, H2C_RSVD_PAGE, H2C_RSVDPAGE_LOC_LEN, u1H2CRsvdPageParm);
 }
 
 
@@ -1154,18 +1152,18 @@ static void rtl8812_set_FwAoacRsvdPage_cmd(PADAPTER padapter, PRSVDPAGE_LOC rsvd
 #endif /* CONFIG_GTK_OL */
 	} else {
 #ifdef CONFIG_PNO_SUPPORT
-		if (!pwrpriv->wowlan_in_resume)
+		if (!pwrpriv->pno_in_resume)
 			SET_H2CCMD_AOAC_RSVDPAGE_LOC_NLO_INFO(u1H2CAoacRsvdPageParm, rsvdpageloc->LocPNOInfo);
 #endif
 	}
 
 	RTW_DBG_DUMP("u1H2CAoacRsvdPageParm:", u1H2CAoacRsvdPageParm, H2C_AOAC_RSVDPAGE_LOC_LEN);
-	fill_h2c_cmd_8812(padapter, H2C_AOAC_RSVD_PAGE, H2C_AOAC_RSVDPAGE_LOC_LEN, u1H2CAoacRsvdPageParm);
+	FillH2CCmd_8812(padapter, H2C_AOAC_RSVD_PAGE, H2C_AOAC_RSVDPAGE_LOC_LEN, u1H2CAoacRsvdPageParm);
 
 #ifdef CONFIG_PNO_SUPPORT
 	if (!check_fwstate(pmlmepriv, WIFI_AP_STATE) &&
 	    !check_fwstate(pmlmepriv, _FW_LINKED) &&
-	    pwrpriv->wowlan_in_resume == _FALSE) {
+	    pwrpriv->pno_in_resume == _FALSE) {
 
 		res = rtw_read8(padapter, 0x1b8);
 		while (res == 0 && count < 25) {
@@ -1342,6 +1340,26 @@ void rtl8812_set_FwJoinBssReport_cmd(PADAPTER padapter, u8 mstatus)
 
 }
 
+int rtl8812_iqk_wait(_adapter *padapter, u32 timeout_ms)
+{
+	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+	struct submit_ctx	*iqk_sctx = &pHalData->iqk_sctx;
+
+	iqk_sctx->submit_time = rtw_get_current_time();
+	iqk_sctx->timeout_ms = timeout_ms;
+	iqk_sctx->status = RTW_SCTX_SUBMITTED;
+
+	return rtw_sctx_wait(iqk_sctx, __func__);
+}
+
+void rtl8812_iqk_done(_adapter *padapter)
+{
+	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+	struct submit_ctx	*iqk_sctx = &pHalData->iqk_sctx;
+
+	rtw_sctx_done(&iqk_sctx);
+}
+
 static VOID
 C2HTxBeamformingHandler_8812(
 	IN	PADAPTER		Adapter,
@@ -1351,20 +1369,20 @@ C2HTxBeamformingHandler_8812(
 {
 	u8	status = CmdBuf[0] & BIT0;
 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
-	struct PHY_DM_STRUCT		*pDM_Odm = &pHalData->odmpriv;
+	PDM_ODM_T		pDM_Odm = &pHalData->odmpriv;
 
 #ifdef CONFIG_BEAMFORMING
 
 #if (BEAMFORMING_SUPPORT == 1)
-	struct _RT_BEAMFORMING_INFO	*p_beam_info = &pDM_Odm->beamforming_info;
-	struct _RT_SOUNDING_INFO		*pSoundInfo = &(p_beam_info->sounding_info);
+	PRT_BEAMFORMING_INFO	pBeamInfo = &pDM_Odm->BeamformingInfo;
+	PRT_SOUNDING_INFO		pSoundInfo = &(pBeamInfo->SoundingInfo);
 
-	if (pSoundInfo->sound_mode == SOUNDING_FW_VHT_TIMER) {
+	if (pSoundInfo->SoundMode == SOUNDING_FW_VHT_TIMER) {
 		RTW_INFO("SOUNDING_FW_VHT_TIMER\n");
-		beamforming_check_sounding_success(pDM_Odm, status);
+		Beamforming_CheckSoundingSuccess(pDM_Odm, status);
 	} else {
 		RTW_INFO("SOUNDING_SW_VHT_TIMER\n");
-		phydm_beamforming_end_sw(pDM_Odm, status);
+		phydm_Beamforming_End_SW(pDM_Odm, status);
 	}
 #else /*(BEAMFORMING_SUPPORT == 0) - drv beamforming*/
 	beamforming_check_sounding_success(Adapter, status);
@@ -1391,25 +1409,147 @@ C2HTxFeedbackHandler_8812(
 #endif
 }
 
-s32 c2h_handler_8812a(_adapter *adapter, u8 id, u8 seq, u8 plen, u8 *payload)
+s32
+_C2HContentParsing8812(
+	IN	PADAPTER	Adapter,
+	IN	u8			c2hCmdId,
+	IN	u8			c2hCmdLen,
+	IN	u8			*tmpBuf
+)
 {
+	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(Adapter);
+	PDM_ODM_T		pDM_Odm = &pHalData->odmpriv;
 	s32 ret = _SUCCESS;
 
-	switch (id) {
+	switch (c2hCmdId) {
 	case C2H_TXBF:
 		RTW_INFO("[C2H], C2H_TXBF!!\n");
-		C2HTxBeamformingHandler_8812(adapter, payload, plen);
+		C2HTxBeamformingHandler_8812(Adapter, tmpBuf, c2hCmdLen);
 		break;
+
 	case C2H_CCX_TX_RPT:
-		C2HTxFeedbackHandler_8812(adapter, payload, plen);
+		/* RTW_INFO("[C2H], C2H_CCX_TX_RPT!!\n"); */
+		C2HTxFeedbackHandler_8812(Adapter, tmpBuf, c2hCmdLen);
 		break;
+
+#ifdef CONFIG_BT_COEXIST
+	case C2H_BT_INFO:
+		rtw_btcoex_BtInfoNotify(Adapter, c2hCmdLen, tmpBuf);
+		break;
+	case C2H_BT_MP_INFO:
+		rtw_btcoex_BtMpRptNotify(Adapter, c2hCmdLen, tmpBuf);
+		break;
+#endif
+
+	case C2H_IQK_FINISH:
+		RTW_INFO("== IQK Finish ==\n");
+		rtl8812_iqk_done(Adapter);
+		/*rtw_odm_acquirespinlock(Adapter, RT_IQK_SPINLOCK);*/
+		/*pDM_Odm->RFCalibrateInfo.bIQKInProgress = FALSE;*/
+		/*rtw_odm_releasespinlock(Adapter, RT_IQK_SPINLOCK);*/
+		break;
+
+	case C2H_MAILBOX_STATUS:
+		RTW_INFO("[C2H], mailbox status:%u\n", *tmpBuf);
+		break;
+#ifdef CONFIG_MCC_MODE
+	case C2H_MCC:
+		/* RTW_INFO("[C2H], Multi Channel Concurrent\n"); */
+		rtw_hal_mcc_c2h_handler(Adapter, c2hCmdLen, tmpBuf);
+		break;
+#endif /* CONFIG_MCC_MODE */
+
+	case C2H_FW_SCAN_COMPLETE:
+		RTW_INFO("[C2H], FW Scan Complete\n");
+		break;
+#ifdef CONFIG_FW_C2H_DEBUG
+	case C2H_EXTEND: {
+		u8 Extend_c2hSubID = tmpBuf[0];
+
+		if (Extend_c2hSubID == EXTEND_C2H_DBG_PRINT) {
+			RTW_INFO("[C2H], FW_DEBUG.\n");
+			phydm_fw_trace_handler_8051(pDM_Odm, tmpBuf, c2hCmdLen);
+		}
+	}
+	break;
+#endif /* CONFIG_FW_C2H_DEBUG*/
+
 	default:
-		ret = _FAIL;
+		if (!(phydm_c2H_content_parsing(pDM_Odm, c2hCmdId, c2hCmdLen, tmpBuf))) {
+			RTW_INFO("%s: [WARNING] unknown C2H(0x%02x)\n", __func__, c2hCmdId);
+			ret = _FAIL;
+		}
 		break;
 	}
 
-exit:
 	return ret;
+}
+
+
+VOID
+C2HPacketHandler_8812(
+	IN	PADAPTER	Adapter,
+	IN	u8			*Buffer,
+	IN	u8			Length
+)
+{
+	struct c2h_evt_hdr_88xx *c2h_evt = (struct c2h_evt_hdr_88xx *)Buffer;
+	u8	c2hCmdId = 0, c2hCmdSeq = 0, c2hCmdLen = 0;
+	u8	*tmpBuf = NULL;
+
+	/* PRINT_DATA(("C2HPacketHandler_8812"), Buffer, Length); */
+	c2hCmdId = Buffer[0];
+	c2hCmdSeq = Buffer[1];
+	c2hCmdLen = Length - 2;
+	tmpBuf = Buffer + 2;
+
+	/* RTW_INFO("[C2H packet], c2hCmdId=0x%x, c2hCmdSeq=0x%x, c2hCmdLen=%d\n", c2hCmdId, c2hCmdSeq, c2hCmdLen); */
+
+#ifdef CONFIG_BT_COEXIST
+	if (Length > 16) {
+		RTW_INFO("[C2H packet], c2hCmdId=0x%x, c2hCmdSeq=0x%x, c2hCmdLen=%d\n", c2hCmdId, c2hCmdSeq, c2hCmdLen);
+		rtw_warn_on(1);
+	}
+
+	if (c2hCmdId == C2H_BT_INFO) {
+		/* enqueue */
+		c2h_evt = (struct c2h_evt_hdr_88xx *)rtw_zmalloc(16);
+		if (c2h_evt != NULL) {
+			_rtw_memcpy(c2h_evt, Buffer, Length);
+			c2h_evt->plen = Length - 2;
+			/* RTW_INFO("-[C2H packet], id=0x%x, seq=0x%x, plen=%d\n", c2h_evt->id, c2h_evt->seq, c2h_evt->plen); */
+			rtw_c2h_wk_cmd(Adapter, (u8 *)c2h_evt);
+		}
+	} else
+#endif /* CONFIG_BT_COEXIST */
+	{
+#ifdef CONFIG_BEAMFORMING
+		if (c2hCmdId == C2H_TXBF) {
+			/* enqueue */
+			c2h_evt = (struct c2h_evt_hdr_88xx *)rtw_zmalloc(16);
+			if (c2h_evt  != NULL) {
+				_rtw_memcpy(c2h_evt, Buffer, Length);
+				c2h_evt->plen = Length - 2;
+				/*RTW_INFO("-[C2H packet], id=0x%x, seq=0x%x, plen=%d\n", c2h_evt->id, c2h_evt->seq, c2h_evt->plen);*/
+				rtw_c2h_wk_cmd(Adapter, (u8 *)c2h_evt);
+			}
+		} else
+#endif
+		{
+#ifdef CONFIG_TDLS
+#ifdef CONFIG_TDLS_CH_SW
+			if (c2hCmdId == C2H_BCN_EARLY_RPT)
+				rtw_tdls_ch_sw_back_to_base_chnl(Adapter);
+			else if (c2hCmdId == C2H_FW_CHNL_SWITCH_COMPLETE)
+				rtw_tdls_chsw_oper_done(Adapter);
+			else
+#endif
+#endif
+			{	/* handle directly */
+				_C2HContentParsing8812(Adapter, c2hCmdId, c2hCmdLen, tmpBuf);
+			}
+		}
+	}
 }
 
 #ifdef CONFIG_BT_COEXIST
@@ -1450,13 +1590,13 @@ void ConstructBtNullFunctionData(
 	_rtw_memcpy(pwlanhdr->addr2, get_my_bssid(&(pmlmeinfo->network)), ETH_ALEN);
 	_rtw_memcpy(pwlanhdr->addr3, adapter_mac_addr(padapter), ETH_ALEN);
 
-	set_duration(pwlanhdr, 0);
+	SetDuration(pwlanhdr, 0);
 	SetSeqNum(pwlanhdr, 0);
 
 	if (bQoS == _TRUE) {
 		struct rtw_ieee80211_hdr_3addr_qos *pwlanqoshdr;
 
-		set_frame_sub_type(pframe, WIFI_QOS_DATA_NULL);
+		SetFrameSubType(pframe, WIFI_QOS_DATA_NULL);
 
 		pwlanqoshdr = (struct rtw_ieee80211_hdr_3addr_qos *)pframe;
 		SetPriority(&pwlanqoshdr->qc, AC);
@@ -1464,7 +1604,7 @@ void ConstructBtNullFunctionData(
 
 		pktlen = sizeof(struct rtw_ieee80211_hdr_3addr_qos);
 	} else {
-		set_frame_sub_type(pframe, WIFI_DATA_NULL);
+		SetFrameSubType(pframe, WIFI_DATA_NULL);
 
 		pktlen = sizeof(struct rtw_ieee80211_hdr_3addr);
 	}

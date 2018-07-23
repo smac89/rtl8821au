@@ -160,9 +160,6 @@ typedef enum _RT_CHANNEL_DOMAIN {
 	RTW_CHPLAN_MKK2_MKK4 = 0x58,
 	RTW_CHPLAN_WORLD_ETSI14 = 0x59,
 	RTW_CHPLAN_FCC1_FCC5 = 0x60,
-	RTW_CHPLAN_FCC2_FCC7 = 0x61,
-	RTW_CHPLAN_FCC2_FCC1 = 0x62,
-	RTW_CHPLAN_WORLD_ETSI15 = 0x63,
 
 	RTW_CHPLAN_MAX,
 	RTW_CHPLAN_REALTEK_DEFINE = 0x7F,
@@ -217,8 +214,6 @@ typedef enum _RT_CHANNEL_DOMAIN_5G {
 	RTW_RD_5G_FCC10 = 31,	/* Argentina(w/o Weather radar) */
 	RTW_RD_5G_MKK4 = 32,	/* Japan (W52) */
 	RTW_RD_5G_ETSI14 = 33,	/* Russia */
-	RTW_RD_5G_FCC11 = 34,	/* US(include CH144) */
-	RTW_RD_5G_ETSI15 = 35,	/* Malaysia */
 
 	/* === Below are driver defined for legacy channel plan compatible, DON'T assign index ==== */
 	RTW_RD_5G_OLD_FCC1,
@@ -237,29 +232,21 @@ typedef struct _RT_CHANNEL_PLAN {
 	unsigned char	Len;
 } RT_CHANNEL_PLAN, *PRT_CHANNEL_PLAN;
 
-struct ch_list_t {
-	u8 *len_ch;
-};
+typedef struct _RT_CHANNEL_PLAN_2G {
+	unsigned char	Channel[MAX_CHANNEL_NUM_2G];
+	unsigned char	Len;
+} RT_CHANNEL_PLAN_2G, *PRT_CHANNEL_PLAN_2G;
 
-#define CH_LIST_ENT(_len, arg...) \
-	{.len_ch = (u8[_len + 1]) {_len, ##arg}, }
-
-#define CH_LIST_LEN(_ch_list) (_ch_list.len_ch[0])
-#define CH_LIST_CH(_ch_list, _i) (_ch_list.len_ch[_i + 1])
+typedef struct _RT_CHANNEL_PLAN_5G {
+	unsigned char	Channel[MAX_CHANNEL_NUM_5G];
+	unsigned char	Len;
+} RT_CHANNEL_PLAN_5G, *PRT_CHANNEL_PLAN_5G;
 
 typedef struct _RT_CHANNEL_PLAN_MAP {
 	u8 Index2G;
-#ifdef CONFIG_IEEE80211_BAND_5GHZ
 	u8 Index5G;
-#endif
 	u8 regd; /* value of REGULATION_TXPWR_LMT */
 } RT_CHANNEL_PLAN_MAP, *PRT_CHANNEL_PLAN_MAP;
-
-#ifdef CONFIG_IEEE80211_BAND_5GHZ
-#define CHPLAN_ENT(i2g, i5g, regd) {i2g, i5g, regd}
-#else
-#define CHPLAN_ENT(i2g, i5g, regd) {i2g, regd}
-#endif
 
 enum Associated_AP {
 	atherosAP	= 0,
@@ -380,7 +367,6 @@ struct ss_res {
 #define	WIFI_FW_AP_STATE				_HW_STATE_AP_
 #define	WIFI_FW_ADHOC_STATE			_HW_STATE_ADHOC_
 
-#define WIFI_FW_PRE_LINK			0x00000800
 #define	WIFI_FW_AUTH_NULL			0x00000100
 #define	WIFI_FW_AUTH_STATE			0x00000200
 #define	WIFI_FW_AUTH_SUCCESS			0x00000400
@@ -518,6 +504,7 @@ void rtw_chset_update_non_ocp(RT_CHANNEL_INFO *ch_set, u8 ch, u8 bw, u8 offset);
 void rtw_chset_update_non_ocp_ms(RT_CHANNEL_INFO *ch_set, u8 ch, u8 bw, u8 offset, int ms);
 u32 rtw_get_ch_waiting_ms(_adapter *adapter, u8 ch, u8 bw, u8 offset, u32 *r_non_ocp_ms, u32 *r_cac_ms);
 void rtw_reset_cac(_adapter *adapter, u8 ch, u8 bw, u8 offset);
+bool rtw_choose_shortest_waiting_ch(_adapter *adapter, u8 req_bw, u8 *dec_ch, u8 *dec_bw, u8 *dec_offset, u8 d_flags);
 #else
 #define CH_IS_NON_OCP(rt_ch_info) 0
 #define rtw_chset_is_ch_non_ocp(ch_set, ch, bw, offset) _FALSE
@@ -533,9 +520,6 @@ enum {
 	RTW_CHF_NON_LONG_CAC = BIT5,
 	RTW_CHF_NON_OCP = BIT6,
 };
-
-bool rtw_choose_shortest_waiting_ch(_adapter *adapter, u8 req_bw, u8 *dec_ch, u8 *dec_bw, u8 *dec_offset, u8 d_flags);
-
 void dump_country_chplan(void *sel, const struct country_chplan *ent);
 void dump_country_chplan_map(void *sel);
 void dump_chplan_id_list(void *sel);
@@ -623,10 +607,6 @@ struct mlme_ext_priv {
                                                       * for ap mode, network includes ap's cap_info */
 	_timer		survey_timer;
 	_timer		link_timer;
-#ifdef CONFIG_RTW_80211R
-	_timer		ft_link_timer;
-	_timer		ft_roam_timer;
-#endif
 
 	/* _timer		ADDBA_timer; */
 	u32 last_scan_time;
@@ -820,7 +800,6 @@ void	update_ldpc_stbc_cap(struct sta_info *psta);
 
 int rtw_get_bcn_keys(ADAPTER *Adapter, u8 *pframe, u32 packet_len,
 		struct beacon_keys *recv_beacon);
-int validate_beacon_len(u8 *pframe, uint len);
 void rtw_dump_bcn_keys(struct beacon_keys *recv_beacon);
 int rtw_check_bcn_info(ADAPTER *Adapter, u8 *pframe, u32 packet_len);
 void update_beacon_info(_adapter *padapter, u8 *pframe, uint len, struct sta_info *psta);
@@ -837,6 +816,7 @@ int rtw_ies_get_supported_rate(u8 *ies, uint ies_len, u8 *rate_set, u8 *rate_num
 void update_sta_info(_adapter *padapter, struct sta_info *psta);
 unsigned int update_basic_rate(unsigned char *ptn, unsigned int ptn_sz);
 unsigned int update_supported_rate(unsigned char *ptn, unsigned int ptn_sz);
+unsigned int update_MCS_rate(struct HT_caps_element *pHT_caps);
 void Update_RA_Entry(_adapter *padapter, struct sta_info *psta);
 void set_sta_rate(_adapter *padapter, struct sta_info *psta);
 
@@ -918,9 +898,7 @@ void issue_p2p_invitation_request(_adapter *padapter, u8 *raddr);
 #endif /* CONFIG_P2P */
 void issue_beacon(_adapter *padapter, int timeout_ms);
 void issue_probersp(_adapter *padapter, unsigned char *da, u8 is_valid_p2p_probereq);
-void _issue_assocreq(_adapter *padapter, u8 is_assoc);
 void issue_assocreq(_adapter *padapter);
-void issue_reassocreq(_adapter *padapter);
 void issue_asocrsp(_adapter *padapter, unsigned short status, struct sta_info *pstat, int pkt_type);
 void issue_auth(_adapter *padapter, struct sta_info *psta, unsigned short status);
 void issue_probereq(_adapter *padapter, NDIS_802_11_SSID *pssid, u8 *da);
@@ -972,9 +950,6 @@ unsigned int OnAction(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int on_action_spct(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int OnAction_qos(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int OnAction_dls(_adapter *padapter, union recv_frame *precv_frame);
-#ifdef CONFIG_RTW_WNM
-unsigned int on_action_wnm(_adapter *adapter, union recv_frame *rframe);
-#endif
 
 #define RX_AMPDU_ACCEPT_INVALID 0xFF
 #define RX_AMPDU_SIZE_INVALID 0xFF
@@ -989,13 +964,11 @@ bool rtw_rx_ampdu_is_accept(_adapter *adapter);
 bool rtw_rx_ampdu_set_size(_adapter *adapter, u8 size, u8 reason);
 bool rtw_rx_ampdu_set_accept(_adapter *adapter, u8 accept, u8 reason);
 u8 rx_ampdu_apply_sta_tid(_adapter *adapter, struct sta_info *sta, u8 tid, u8 accept, u8 size);
-u8 rx_ampdu_size_sta_limit(_adapter *adapter, struct sta_info *sta);
 u8 rx_ampdu_apply_sta(_adapter *adapter, struct sta_info *sta, u8 accept, u8 size);
 u16 rtw_rx_ampdu_apply(_adapter *adapter);
 
 unsigned int OnAction_back(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int on_action_public(_adapter *padapter, union recv_frame *precv_frame);
-unsigned int OnAction_ft(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int OnAction_ht(_adapter *padapter, union recv_frame *precv_frame);
 #ifdef CONFIG_IEEE80211W
 unsigned int OnAction_sa_query(_adapter *padapter, union recv_frame *precv_frame);
@@ -1004,14 +977,7 @@ unsigned int OnAction_wmm(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int OnAction_vht(_adapter *padapter, union recv_frame *precv_frame);
 unsigned int OnAction_p2p(_adapter *padapter, union recv_frame *precv_frame);
 
-#ifdef CONFIG_RTW_80211R
-void start_clnt_ft_action(_adapter *padapter, u8 *pTargetAddr);
-void issue_action_ft_request(_adapter *padapter, u8 *pTargetAddr);
-void report_ft_event(_adapter *padapter);
-void report_ft_reassoc_event(_adapter *padapter, u8 *pMacAddr);
-void ft_link_timer_hdl(_adapter *padapter);
-void ft_roam_timer_hdl(_adapter *padapter);
-#endif
+
 void mlmeext_joinbss_event_callback(_adapter *padapter, int join_res);
 void mlmeext_sta_del_event_callback(_adapter *padapter);
 void mlmeext_sta_add_event_callback(_adapter *padapter, struct sta_info *psta);
@@ -1243,9 +1209,6 @@ enum rtw_c2h_event {
 #ifdef CONFIG_IEEE80211W
 	GEN_EVT_CODE(_TimeoutSTA),
 #endif /* CONFIG_IEEE80211W */
-#ifdef CONFIG_RTW_80211R
-	GEN_EVT_CODE(_FT_REASSOC),
-#endif
 	MAX_C2HEVT
 };
 
@@ -1283,9 +1246,7 @@ static struct fwevent wlanevents[] = {
 #ifdef CONFIG_IEEE80211W
 	{sizeof(struct stadel_event), &rtw_sta_timeout_event_callback},
 #endif /* CONFIG_IEEE80211W */
-#ifdef CONFIG_RTW_80211R
-	{sizeof(struct stassoc_event), &rtw_ft_reassoc_event_callback},
-#endif
+
 };
 
 #endif/* _RTW_MLME_EXT_C_ */

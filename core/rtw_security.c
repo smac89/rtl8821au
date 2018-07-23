@@ -1376,7 +1376,7 @@ static sint aes_cipher(u8 *key, uint	hdrlen,
 	u8 mic[8];
 	/*	uint	offset = 0; */
 	uint	frtype  = GetFrameType(pframe);
-	uint	frsubtype  = get_frame_sub_type(pframe);
+	uint	frsubtype  = GetFrameSubType(pframe);
 
 	frsubtype = frsubtype >> 4;
 
@@ -1685,7 +1685,7 @@ static sint aes_decipher(u8 *key, uint	hdrlen,
 
 	/*	uint	offset = 0; */
 	uint	frtype  = GetFrameType(pframe);
-	uint	frsubtype  = get_frame_sub_type(pframe);
+	uint	frsubtype  = GetFrameSubType(pframe);
 	frsubtype = frsubtype >> 4;
 
 

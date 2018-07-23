@@ -217,18 +217,14 @@ typedef struct _MPT_CONTEXT {
 	/* The Value of IO operation is depend of MptActType. */
 	ULONG			MptIoValue;
 	/* The RfPath of IO operation is depend of MptActType. */
-
-	ULONG			mpt_rf_path;
-
+	ULONG			MptRfPath;
 
 	WIRELESS_MODE		MptWirelessModeToSw;	/* Wireless mode to switch. */
 	u8			MptChannelToSw;	/* Channel to switch. */
 	u8			MptInitGainToSet;	/* Initial gain to set. */
 	/* ULONG			bMptAntennaA;		 */ /* TRUE if we want to use antenna A. */
 	ULONG			MptBandWidth;		/* bandwidth to switch. */
-
-	ULONG			mpt_rate_index;/* rate index. */
-
+	ULONG			MptRateIndex;		/* rate index. */
 	/* Register value kept for Single Carrier Tx test. */
 	u8			btMpCckTxPower;
 	/* Register value kept for Single Carrier Tx test. */
@@ -247,19 +243,13 @@ typedef struct _MPT_CONTEXT {
 
 	BOOLEAN			bCckContTx;	/* TRUE if we are in CCK Continuous Tx test. */
 	BOOLEAN			bOfdmContTx;	/* TRUE if we are in OFDM Continuous Tx test. */
-		/* TRUE if we have start Continuous Tx test. */
-	BOOLEAN			is_start_cont_tx;
-
+	BOOLEAN			bStartContTx;	/* TRUE if we have start Continuous Tx test. */
 	/* TRUE if we are in Single Carrier Tx test. */
 	BOOLEAN			bSingleCarrier;
 	/* TRUE if we are in Carrier Suppression Tx Test. */
-
-	BOOLEAN			is_carrier_suppression;
-
+	BOOLEAN			bCarrierSuppression;
 	/* TRUE if we are in Single Tone Tx test. */
-
-	BOOLEAN			is_single_tone;
-
+	BOOLEAN			bSingleTone;
 
 	/* ACK counter asked by K.Y.. */
 	BOOLEAN			bMptEnableAckCounter;
@@ -339,7 +329,6 @@ enum {
 	MP_LCK,
 	MP_HW_TX_MODE,
 	MP_GET_TXPOWER_INX,
-	MP_CUSTOMER_STR,
 	MP_NULL,
 	MP_SetBT,
 #ifdef CONFIG_APPEND_VENDOR_IE_ENABLE
@@ -444,10 +433,7 @@ struct mp_priv {
 	BOOLEAN bTxBufCkFail;
 	BOOLEAN bRTWSmbCfg;
 	BOOLEAN bloopback;
-	BOOLEAN bloadefusemap;
-
-	MPT_CONTEXT	mpt_ctx;
-
+	MPT_CONTEXT MptCtx;
 
 	u8		*TXradomBuffer;
 };
@@ -773,16 +759,19 @@ s32 hal_mpt_SetThermalMeter(PADAPTER pAdapter, u8 target_ther);
 void hal_mpt_TriggerRFThermalMeter(PADAPTER pAdapter);
 u8 hal_mpt_ReadRFThermalMeter(PADAPTER pAdapter);
 void hal_mpt_GetThermalMeter(PADAPTER pAdapter, u8 *value);
+void hal_mpt_CCKTxPowerAdjustbyIndex(PADAPTER pAdapter, BOOLEAN beven);
 void hal_mpt_SetContinuousTx(PADAPTER pAdapter, u8 bStart);
 void hal_mpt_SetSingleCarrierTx(PADAPTER pAdapter, u8 bStart);
 void hal_mpt_SetSingleToneTx(PADAPTER pAdapter, u8 bStart);
 void hal_mpt_SetCarrierSuppressionTx(PADAPTER pAdapter, u8 bStart);
+void hal_mpt_SetCCKContinuousTx(PADAPTER pAdapter, u8 bStart);
+void hal_mpt_SetOFDMContinuousTx(PADAPTER pAdapter, u8 bStart);
 void mpt_ProSetPMacTx(PADAPTER	Adapter);
+
 void MP_PHY_SetRFPathSwitch(PADAPTER pAdapter , BOOLEAN bMain);
-u8 MP_PHY_QueryRFPathSwitch(PADAPTER pAdapter);
 ULONG mpt_ProQueryCalTxPower(PADAPTER	pAdapter, u8 RfPath);
 void MPT_PwrCtlDM(PADAPTER padapter, u32 bstart);
-u8 mpt_to_mgnt_rate(u32	MptRateIdx);
+u8 MptToMgntRate(u32	MptRateIdx);
 u8 rtw_mpRateParseFunc(PADAPTER pAdapter, u8 *targetStr);
 u32 mp_join(PADAPTER padapter, u8 mode);
 u32 hal_mpt_query_phytxok(PADAPTER	pAdapter);
@@ -904,7 +893,7 @@ int rtw_mp_phypara(struct net_device *dev,
 		struct iw_point *wrqu, char *extra);
 int rtw_mp_SetRFPath(struct net_device *dev,
 		struct iw_request_info *info,
-		struct iw_point *wrqu, char *extra);
+		union iwreq_data *wrqu, char *extra);
 int rtw_mp_QueryDrv(struct net_device *dev,
 		struct iw_request_info *info,
 		union iwreq_data *wrqu, char *extra);

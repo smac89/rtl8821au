@@ -100,7 +100,7 @@ PHY_GetRateIndexOfTxPowerByRate(
 );
 
 VOID
-phy_set_tx_power_index_by_rate_section(
+PHY_SetTxPowerIndexByRateSection(
 	IN	PADAPTER		pAdapter,
 	IN	u8				RFPath,
 	IN	u8				Channel,
@@ -147,7 +147,7 @@ PHY_SetTxPowerByRate(
 );
 
 VOID
-phy_set_tx_power_level_by_path(
+PHY_SetTxPowerLevelByPath(
 	IN	PADAPTER	Adapter,
 	IN	u8			channel,
 	IN	u8			path
@@ -169,7 +169,7 @@ PHY_InitTxPowerByRate(
 );
 
 VOID
-phy_store_tx_power_by_rate(
+PHY_StoreTxPowerByRate(
 	IN	PADAPTER	pAdapter,
 	IN	u32			Band,
 	IN	u32			RfPath,
@@ -255,7 +255,7 @@ struct txpwr_idx_comp {
 };
 
 u8
-phy_get_tx_power_index(
+PHY_GetTxPowerIndex(
 	IN	PADAPTER			pAdapter,
 	IN	u8					RFPath,
 	IN	u8					Rate,

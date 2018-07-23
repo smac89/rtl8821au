@@ -142,6 +142,19 @@
 	#define RT_AC_INT_MASKS	(IMR_VIDOK_88E | IMR_VODOK_88E | IMR_BEDOK_88E | IMR_BKDOK_88E)
 #endif
 
+
+/* ********************************************************
+ * General definitions
+ * ******************************************************** */
+
+#define MACID_NUM_88E 64
+#define SEC_CAM_ENT_NUM_88E 32
+#define HW_PORT_NUM_88E	2
+#define NSS_NUM_88E 1
+#define BAND_CAP_88E (BAND_CAP_2G)
+#define BW_CAP_88E (BW_CAP_20M | BW_CAP_40M)
+#define PROTO_CAP_88E (PROTO_CAP_11B | PROTO_CAP_11G | PROTO_CAP_11N)
+
 /* ----------------------------------------------------------------------------
  * 8192C EEPROM/EFUSE share register definition.
  * ---------------------------------------------------------------------------- */

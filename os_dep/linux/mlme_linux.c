@@ -313,22 +313,6 @@ void _link_timer_hdl(void *FunctionContext)
 	link_timer_hdl(padapter);
 }
 
-#ifdef CONFIG_RTW_80211R
-void _ft_link_timer_hdl(void *FunctionContext)
-{
-	_adapter *padapter = (_adapter *)FunctionContext;
-
-	ft_link_timer_hdl(padapter);
-}
-
-void _ft_roam_timer_hdl(void *FunctionContext)
-{
-	_adapter *padapter = (_adapter *)FunctionContext;
-
-	ft_roam_timer_hdl(padapter);
-}
-#endif
-
 void _addba_timer_hdl(void *FunctionContext)
 {
 	struct sta_info *psta = (struct sta_info *)FunctionContext;
@@ -377,10 +361,6 @@ void init_mlme_ext_timer(_adapter *padapter)
 
 	_init_timer(&pmlmeext->survey_timer, padapter->pnetdev, _survey_timer_hdl, padapter);
 	_init_timer(&pmlmeext->link_timer, padapter->pnetdev, _link_timer_hdl, padapter);
-#ifdef CONFIG_RTW_80211R
-	_init_timer(&pmlmeext->ft_link_timer, padapter->pnetdev, _ft_link_timer_hdl, padapter);
-	_init_timer(&pmlmeext->ft_roam_timer, padapter->pnetdev, _ft_roam_timer_hdl, padapter);
-#endif
 
 	/* _init_timer(&pmlmeext->ADDBA_timer, padapter->pnetdev, _addba_timer_hdl, padapter); */
 

@@ -27,16 +27,11 @@
 /*#define RAINFO_VERSION	"3.3"  2015.07.29 YuChen*/
 /*#define RAINFO_VERSION	"3.4"*/  /*2015.12.15 Stanley*/
 /*#define RAINFO_VERSION	"4.0"*/  /*2016.03.24 Dino, Add more RA mask state and Phydm-lize partial ra mask function  */
-/*#define RAINFO_VERSION	"4.1"*/  /*2016.04.20 Dino, Add new function to adjust PCR RA threshold  */
-/*#define RAINFO_VERSION	"4.2"*/  /*2016.05.17 Dino, Add H2C debug cmd  */
-#define RAINFO_VERSION	"4.3"  /*2016.07.11 Dino, Fix RA hang in CCK 1M problem  */
-
-#define	FORCED_UPDATE_RAMASK_PERIOD	5
+#define RAINFO_VERSION	"4.1"  /*2016.04.20 Dino, Add new function to adjust PCR RA threshold  */
 
 #define	H2C_0X42_LENGTH	5
-#define	H2C_MAX_LENGTH	7
 
-#define	RA_FLOOR_UP_GAP		3
+#define	RA_FLOOR_UP_GAP				3
 #define	RA_FLOOR_TABLE_SIZE	7
 
 #define	ACTIVE_TP_THRESHOLD	150
@@ -44,15 +39,15 @@
 #define	RA_RETRY_LIMIT_LOW	4
 #define	RA_RETRY_LIMIT_HIGH	32
 
-#define RAINFO_BE_RX_STATE			BIT(0)  /* 1:RX    */ /* ULDL */
-#define RAINFO_STBC_STATE			BIT(1)
-/* #define RAINFO_LDPC_STATE			BIT2 */
-#define RAINFO_NOISY_STATE 			BIT(2)    /* set by Noisy_Detection */
-#define RAINFO_SHURTCUT_STATE		BIT(3)
-#define RAINFO_SHURTCUT_FLAG		BIT(4)
-#define RAINFO_INIT_RSSI_RATE_STATE  BIT(5)
-#define RAINFO_BF_STATE				BIT(6)
-#define RAINFO_BE_TX_STATE 			BIT(7) /* 1:TX */
+#define RAINFO_BE_RX_STATE			BIT0  // 1:RX    //ULDL
+#define RAINFO_STBC_STATE			BIT1
+//#define RAINFO_LDPC_STATE 			BIT2
+#define RAINFO_NOISY_STATE 			BIT2    // set by Noisy_Detection
+#define RAINFO_SHURTCUT_STATE 		BIT3
+#define RAINFO_SHURTCUT_FLAG 		BIT4
+#define RAINFO_INIT_RSSI_RATE_STATE  BIT5
+#define RAINFO_BF_STATE 				BIT6
+#define RAINFO_BE_TX_STATE 			BIT7 // 1:TX
 
 #define	RA_MASK_CCK		0xf
 #define	RA_MASK_OFDM		0xff0
@@ -63,50 +58,46 @@
 #define	RA_MASK_VHT1SS	0x3ff000
 #define	RA_MASK_VHT2SS	0xffc00000
 
-#if (DM_ODM_SUPPORT_TYPE == ODM_AP)
-	#define		RA_FIRST_MACID	1
+#if(DM_ODM_SUPPORT_TYPE == ODM_AP)
+#define		RA_FIRST_MACID 	1
 #elif (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	#define	RA_FIRST_MACID	0
-	#define	WIN_DEFAULT_PORT_MACID	0
-	#define	WIN_BT_PORT_MACID	2
+#define	RA_FIRST_MACID	0
+#define	WIN_DEFAULT_PORT_MACID	0
+#define	WIN_BT_PORT_MACID	2
 #else /*if (DM_ODM_SUPPORT_TYPE == ODM_CE)*/
-	#define		RA_FIRST_MACID	0
+#define		RA_FIRST_MACID 	0
 #endif
 
-#if (DM_ODM_SUPPORT_TYPE & ODM_WIN)
-#define AP_InitRateAdaptiveState		odm_rate_adaptive_state_ap_init
-#else
-#define ap_init_rate_adaptive_state	odm_rate_adaptive_state_ap_init
-#endif
+#define AP_InitRateAdaptiveState	ODM_RateAdaptiveStateApInit
 
 #if (RA_MASK_PHYDMLIZE_CE || RA_MASK_PHYDMLIZE_AP || RA_MASK_PHYDMLIZE_WIN)
-	#define		DM_RATR_STA_INIT			0
-	#define		DM_RATR_STA_HIGH			1
-	#define		DM_RATR_STA_MIDDLE		2
-	#define		DM_RATR_STA_LOW			3
-	#define		DM_RATR_STA_ULTRA_LOW	4
+#define		DM_RATR_STA_INIT			0
+#define		DM_RATR_STA_HIGH			1
+#define 		DM_RATR_STA_MIDDLE		2
+#define 		DM_RATR_STA_LOW			3
+#define		DM_RATR_STA_ULTRA_LOW	4
 #endif
 
-enum phydm_ra_arfr_num_e {
+typedef enum _phydm_arfr_num {
 	ARFR_0_RATE_ID	=	0x9,
 	ARFR_1_RATE_ID	=	0xa,
 	ARFR_2_RATE_ID	=	0xb,
 	ARFR_3_RATE_ID	=	0xc,
 	ARFR_4_RATE_ID	=	0xd,
 	ARFR_5_RATE_ID	=	0xe
-};
+} PHYDM_RA_ARFR_NUM_E;
 
-enum phydm_ra_dbg_para_e {
+typedef enum _Phydm_ra_dbg_para {
 	RADBG_PCR_TH_OFFSET		=	0,
 	RADBG_RTY_PENALTY		=	1,
-	RADBG_N_HIGH				=	2,
+	RADBG_N_HIGH 				=	2,
 	RADBG_N_LOW				=	3,
 	RADBG_TRATE_UP_TABLE		=	4,
 	RADBG_TRATE_DOWN_TABLE	=	5,
 	RADBG_TRYING_NECESSARY	=	6,
 	RADBG_TDROPING_NECESSARY =	7,
 	RADBG_RATE_UP_RTY_RATIO	=	8,
-	RADBG_RATE_DOWN_RTY_RATIO =	9, /* u8 */
+	RADBG_RATE_DOWN_RTY_RATIO =	9, //u8
 
 	RADBG_DEBUG_MONITOR1 = 0xc,
 	RADBG_DEBUG_MONITOR2 = 0xd,
@@ -114,10 +105,10 @@ enum phydm_ra_dbg_para_e {
 	RADBG_DEBUG_MONITOR4 = 0xf,
 	RADBG_DEBUG_MONITOR5 = 0x10,
 	NUM_RA_PARA
-};
+} PHYDM_RA_DBG_PARA_E;
 
-enum phydm_wireless_mode_e {
-
+typedef enum PHYDM_WIRELESS_MODE {
+	
 	PHYDM_WIRELESS_MODE_UNKNOWN = 0x00,
 	PHYDM_WIRELESS_MODE_A		= 0x01,
 	PHYDM_WIRELESS_MODE_B		= 0x02,
@@ -130,10 +121,10 @@ enum phydm_wireless_mode_e {
 	PHYDM_WIRELESS_MODE_AC_ONLY	= 0x100,
 	PHYDM_WIRELESS_MODE_MAX		= 0x800,
 	PHYDM_WIRELESS_MODE_ALL		= 0xFFFF
-};
+} PHYDM_WIRELESS_MODE_E;
 
-enum phydm_rateid_idx_e {
-
+typedef enum PHYDM_RATEID_IDX_ {
+	
 	PHYDM_BGN_40M_2SS	= 0,
 	PHYDM_BGN_40M_1SS	= 1,
 	PHYDM_BGN_20M_2SS	= 2,
@@ -149,11 +140,11 @@ enum phydm_rateid_idx_e {
 	PHYDM_ARFR3_AC_2G_2SS	= 12,
 	PHYDM_ARFR4_AC_3SS	= 13,
 	PHYDM_ARFR5_N_3SS		= 14
-};
+} PHYDM_RATEID_IDX_E;
 
-enum phydm_rf_type_def_e {
+typedef	enum _PHYDM_RF_TYPE_DEFINITION {
 	PHYDM_RF_1T1R = 0,
-	PHYDM_RF_1T2R,
+	PHYDM_RF_1T2R,			
 	PHYDM_RF_2T2R,
 	PHYDM_RF_2T2R_GREEN,
 	PHYDM_RF_2T3R,
@@ -162,428 +153,413 @@ enum phydm_rf_type_def_e {
 	PHYDM_RF_3T4R,
 	PHYDM_RF_4T4R,
 	PHYDM_RF_MAX_TYPE
-};
+} PHYDM_RF_TYPE_DEF_E;
 
-enum phydm_bw_e {
+typedef	enum _PHYDM_BW {
 	PHYDM_BW_20	= 0,
 	PHYDM_BW_40,
 	PHYDM_BW_80,
-	PHYDM_BW_80_80,
+	PHYDM_BW_80_80,	
 	PHYDM_BW_160,
 	PHYDM_BW_10,
 	PHYDM_BW_5
-};
+} PHYDM_BW_E;
 
 
-#if (RATE_ADAPTIVE_SUPPORT == 1)/* 88E RA */
-struct _odm_ra_info_ {
-	u8 rate_id;
-	u32 rate_mask;
-	u32 ra_use_rate;
-	u8 rate_sgi;
-	u8 rssi_sta_ra;
-	u8 pre_rssi_sta_ra;
-	u8 sgi_enable;
-	u8 decision_rate;
-	u8 pre_rate;
-	u8 highest_rate;
-	u8 lowest_rate;
-	u32 nsc_up;
-	u32 nsc_down;
-	u16 RTY[5];
-	u32 TOTAL;
-	u16 DROP;
-	u8 active;
-	u16 rpt_time;
-	u8 ra_waiting_counter;
-	u8 ra_pending_counter;
-	u8 ra_drop_after_down;
-#if 1 /* POWER_TRAINING_ACTIVE == 1 */ /* For compile  pass only~! */
-	u8 pt_active;  /* on or off */
-	u8 pt_try_state;  /* 0 trying state, 1 for decision state */
-	u8 pt_stage;  /* 0~6 */
-	u8 pt_stop_count; /* Stop PT counter */
-	u8 pt_pre_rate;  /* if rate change do PT */
-	u8 pt_pre_rssi; /* if RSSI change 5% do PT */
-	u8 pt_mode_ss;  /* decide whitch rate should do PT */
-	u8 ra_stage;  /* StageRA, decide how many times RA will be done between PT */
-	u8 pt_smooth_factor;
+#if (RATE_ADAPTIVE_SUPPORT == 1)//88E RA
+typedef struct _ODM_RA_Info_ {
+	u1Byte RateID;
+	u4Byte RateMask;
+	u4Byte RAUseRate;
+	u1Byte RateSGI;
+	u1Byte RssiStaRA;
+	u1Byte PreRssiStaRA;
+	u1Byte SGIEnable;
+	u1Byte DecisionRate;
+	u1Byte PreRate;
+	u1Byte HighestRate;
+	u1Byte LowestRate;
+	u4Byte NscUp;
+	u4Byte NscDown;
+	u2Byte RTY[5];
+	u4Byte TOTAL;
+	u2Byte DROP;
+	u1Byte Active;
+	u2Byte RptTime;
+	u1Byte RAWaitingCounter;
+	u1Byte RAPendingCounter;
+	u1Byte RADropAfterDown;
+#if 1 //POWER_TRAINING_ACTIVE == 1 // For compile  pass only~!
+	u1Byte PTActive;  // on or off
+	u1Byte PTTryState;  // 0 trying state, 1 for decision state
+	u1Byte PTStage;  // 0~6
+	u1Byte PTStopCount; //Stop PT counter
+	u1Byte PTPreRate;  // if rate change do PT
+	u1Byte PTPreRssi; // if RSSI change 5% do PT
+	u1Byte PTModeSS;  // decide whitch rate should do PT
+	u1Byte RAstage;  // StageRA, decide how many times RA will be done between PT
+	u1Byte PTSmoothFactor;
 #endif
-#if (DM_ODM_SUPPORT_TYPE == ODM_AP) &&	((DEV_BUS_TYPE == RT_USB_INTERFACE) || (DEV_BUS_TYPE == RT_SDIO_INTERFACE))
-	u8 rate_down_counter;
-	u8 rate_up_counter;
-	u8 rate_direction;
-	u8 bounding_type;
-	u8 bounding_counter;
-	u8 bounding_learning_time;
-	u8 rate_down_start_time;
+#if (DM_ODM_SUPPORT_TYPE == ODM_AP) && 	((DEV_BUS_TYPE == RT_USB_INTERFACE) || (DEV_BUS_TYPE == RT_SDIO_INTERFACE))
+	u1Byte RateDownCounter;
+	u1Byte RateUpCounter;
+	u1Byte RateDirection;
+	u1Byte BoundingType;
+	u1Byte BoundingCounter;
+	u1Byte BoundingLearningTime;
+	u1Byte RateDownStartTime;
 #endif
-};
+} ODM_RA_INFO_T, *PODM_RA_INFO_T;
 #endif
 
 
-struct _rate_adaptive_table_ {
-	u8		firstconnect;
-#if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
-	boolean		PT_collision_pre;
+typedef struct _Rate_Adaptive_Table_ {
+	u1Byte		firstconnect;
+#if(DM_ODM_SUPPORT_TYPE==ODM_WIN)
+	BOOLEAN		PT_collision_pre;
 #endif
 
 #if (defined(CONFIG_RA_DBG_CMD))
-	boolean		is_ra_dbg_init;
+	BOOLEAN		is_ra_dbg_init;
 
-	u8	RTY_P[ODM_NUM_RATE_IDX];
-	u8	RTY_P_default[ODM_NUM_RATE_IDX];
-	boolean	RTY_P_modify_note[ODM_NUM_RATE_IDX];
+	u1Byte	RTY_P[ODM_NUM_RATE_IDX];
+	u1Byte	RTY_P_default[ODM_NUM_RATE_IDX];
+	BOOLEAN	RTY_P_modify_note[ODM_NUM_RATE_IDX];
 
-	u8	RATE_UP_RTY_RATIO[ODM_NUM_RATE_IDX];
-	u8	RATE_UP_RTY_RATIO_default[ODM_NUM_RATE_IDX];
-	boolean	RATE_UP_RTY_RATIO_modify_note[ODM_NUM_RATE_IDX];
+	u1Byte	RATE_UP_RTY_RATIO[ODM_NUM_RATE_IDX];
+	u1Byte	RATE_UP_RTY_RATIO_default[ODM_NUM_RATE_IDX];
+	BOOLEAN	RATE_UP_RTY_RATIO_modify_note[ODM_NUM_RATE_IDX];
 
-	u8	RATE_DOWN_RTY_RATIO[ODM_NUM_RATE_IDX];
-	u8	RATE_DOWN_RTY_RATIO_default[ODM_NUM_RATE_IDX];
-	boolean	RATE_DOWN_RTY_RATIO_modify_note[ODM_NUM_RATE_IDX];
+	u1Byte	RATE_DOWN_RTY_RATIO[ODM_NUM_RATE_IDX];
+	u1Byte	RATE_DOWN_RTY_RATIO_default[ODM_NUM_RATE_IDX];
+	BOOLEAN	RATE_DOWN_RTY_RATIO_modify_note[ODM_NUM_RATE_IDX];
 
-	boolean ra_para_feedback_req;
+	BOOLEAN RA_Para_feedback_req;
 
-	u8   para_idx;
-	u8	rate_idx;
-	u8	value;
-	u16	value_16;
-	u8	rate_length;
+	u1Byte   para_idx;
+	u1Byte	rate_idx;
+	u1Byte	value;
+	u2Byte	value_16;
+	u1Byte	rate_length;
 #endif
-	u8	link_tx_rate[ODM_ASSOCIATE_ENTRY_NUM];
-	u8	highest_client_tx_order;
-	u16	highest_client_tx_rate_order;
-	u8	power_tracking_flag;
-	u8	RA_threshold_offset;
-	u8	RA_offset_direction;
-	u8	force_update_ra_mask_count;
+	u1Byte	link_tx_rate[ODM_ASSOCIATE_ENTRY_NUM];
+	u1Byte	highest_client_tx_order;
+	u2Byte	highest_client_tx_rate_order;
+	u1Byte	power_tracking_flag;
+	u1Byte	RA_threshold_offset;
+	u1Byte	RA_offset_direction;
 
-#if (defined(CONFIG_RA_DYNAMIC_RTY_LIMIT))
-	u8 per_rate_retrylimit_20M[ODM_NUM_RATE_IDX];
-	u8 per_rate_retrylimit_40M[ODM_NUM_RATE_IDX];
-	u8			retry_descend_num;
-	u8			retrylimit_low;
-	u8			retrylimit_high;
+	#if (defined(CONFIG_RA_DYNAMIC_RTY_LIMIT))
+	u1Byte per_rate_retrylimit_20M[ODM_NUM_RATE_IDX];
+	u1Byte per_rate_retrylimit_40M[ODM_NUM_RATE_IDX];	
+	u1Byte			retry_descend_num;
+	u1Byte			retrylimit_low;
+	u1Byte			retrylimit_high;
+	#endif
+
+
+} RA_T, *pRA_T;
+
+typedef struct _ODM_RATE_ADAPTIVE {
+	u1Byte				Type;				// DM_Type_ByFW/DM_Type_ByDriver
+	u1Byte				HighRSSIThresh;		// if RSSI > HighRSSIThresh	=> RATRState is DM_RATR_STA_HIGH
+	u1Byte				LowRSSIThresh;		// if RSSI <= LowRSSIThresh	=> RATRState is DM_RATR_STA_LOW
+	u1Byte				RATRState;			// Current RSSI level, DM_RATR_STA_HIGH/DM_RATR_STA_MIDDLE/DM_RATR_STA_LOW
+
+#if(DM_ODM_SUPPORT_TYPE & (ODM_WIN|ODM_CE))
+	u1Byte				LdpcThres;			// if RSSI > LdpcThres => switch from LPDC to BCC
+	BOOLEAN				bLowerRtsRate;
 #endif
 
-
-};
-
-struct _ODM_RATE_ADAPTIVE {
-	u8				type;				/* dm_type_by_fw/dm_type_by_driver */
-	u8				high_rssi_thresh;		/* if RSSI > high_rssi_thresh	=> ratr_state is DM_RATR_STA_HIGH */
-	u8				low_rssi_thresh;		/* if RSSI <= low_rssi_thresh	=> ratr_state is DM_RATR_STA_LOW */
-	u8				ratr_state;			/* Current RSSI level, DM_RATR_STA_HIGH/DM_RATR_STA_MIDDLE/DM_RATR_STA_LOW */
-
-#if (DM_ODM_SUPPORT_TYPE & (ODM_WIN | ODM_CE))
-	u8				ldpc_thres;			/* if RSSI > ldpc_thres => switch from LPDC to BCC */
-	boolean				is_lower_rts_rate;
-#endif
-
-#if (DM_ODM_SUPPORT_TYPE & ODM_WIN)
-	u8				rts_thres;
-#elif (DM_ODM_SUPPORT_TYPE & ODM_CE)
-	boolean				is_use_ldpc;
+#if(DM_ODM_SUPPORT_TYPE & ODM_WIN)
+	u1Byte				RtsThres;
+#elif(DM_ODM_SUPPORT_TYPE & ODM_CE)
+	BOOLEAN				bUseLdpc;
 #else
-	u8				ultra_low_rssi_thresh;
-	u32				last_ratr;			/* RATR Register Content */
+	u1Byte				UltraLowRSSIThresh;
+	u4Byte				LastRATR;			// RATR Register Content
 #endif
 
-};
-
-void
-phydm_h2C_debug(
-	void		*p_dm_void,
-	u32		*const dm_value,
-	u32		*_used,
-	char			*output,
-	u32		*_out_len
-);
+} ODM_RATE_ADAPTIVE, *PODM_RATE_ADAPTIVE;
 
 #if (defined(CONFIG_RA_DBG_CMD))
 
-void
+VOID
 odm_RA_debug(
-	void		*p_dm_void,
-	u32		*const dm_value
+	IN		PVOID		pDM_VOID,
+	IN		u4Byte		*const dm_value
 );
 
-void
-odm_ra_para_adjust_init(
-	void		*p_dm_void
+VOID
+odm_RA_ParaAdjust_init(
+	IN		PVOID		pDM_VOID
 );
 
 #else
 
-void
+VOID
 phydm_RA_debug_PCR(
-	void		*p_dm_void,
-	u32		*const dm_value,
-	u32		*_used,
-	char			*output,
-	u32		*_out_len
+	IN		PVOID		pDM_VOID,
+	IN		u4Byte		*const dm_value,
+	IN		u4Byte		*_used,
+	OUT		char			*output,
+	IN		u4Byte		*_out_len
 );
 
 #endif
 
-void
-odm_c2h_ra_para_report_handler(
-	void	*p_dm_void,
-	u8	*cmd_buf,
-	u8	cmd_len
+VOID
+ODM_C2HRaParaReportHandler(
+	IN	PVOID	pDM_VOID,
+	IN	pu1Byte	CmdBuf,
+	IN	u1Byte	CmdLen
 );
 
-void
-odm_ra_para_adjust(
-	void		*p_dm_void
+VOID
+odm_RA_ParaAdjust(
+	IN		PVOID		pDM_VOID
 );
 
-void
+VOID
 phydm_ra_dynamic_retry_count(
-	void	*p_dm_void
+	IN	PVOID	pDM_VOID
 );
 
-void
+VOID
 phydm_ra_dynamic_retry_limit(
-	void	*p_dm_void
+	IN	PVOID	pDM_VOID
 );
 
-void
+VOID
 phydm_ra_dynamic_rate_id_on_assoc(
-	void	*p_dm_void,
-	u8	wireless_mode,
-	u8	init_rate_id
+	IN	PVOID	pDM_VOID,
+	IN	u1Byte	wireless_mode,
+	IN	u1Byte	init_rate_id
 );
 
-void
+VOID
 phydm_print_rate(
-	void	*p_dm_void,
-	u8	rate,
-	u32	dbg_component
+	IN	PVOID	pDM_VOID,
+	IN	u1Byte	rate,
+	IN	u4Byte	dbg_component
 );
 
-void
+VOID
 phydm_c2h_ra_report_handler(
-	void	*p_dm_void,
-	u8   *cmd_buf,
-	u8   cmd_len
+	IN PVOID	pDM_VOID,
+	IN pu1Byte   CmdBuf,
+	IN u1Byte   CmdLen
 );
 
-u8
+u1Byte
 phydm_rate_order_compute(
-	void	*p_dm_void,
-	u8	rate_idx
-);
+	IN	PVOID	pDM_VOID,
+	IN	u1Byte	rate_idx
+	);
 
-void
+VOID
 phydm_ra_info_watchdog(
-	void	*p_dm_void
+	IN	PVOID	pDM_VOID
 );
 
-void
+VOID
 phydm_ra_info_init(
-	void	*p_dm_void
+	IN	PVOID	pDM_VOID
 );
 
-void
-odm_rssi_monitor_init(
-	void	*p_dm_void
+VOID
+odm_RSSIMonitorInit(
+	IN	PVOID	pDM_VOID
 );
 
-void
-phydm_modify_RA_PCR_threshold(
-	void		*p_dm_void,
-	u8		RA_offset_direction,
-	u8		RA_threshold_offset
+VOID
+odm_RSSIMonitorCheck(
+	IN	PVOID	pDM_VOID
 );
 
-void
-odm_rssi_monitor_check(
-	void	*p_dm_void
+VOID
+phydm_initRaInfo(
+	IN		PVOID		pDM_VOID
 );
 
-void
-phydm_init_ra_info(
-	void		*p_dm_void
-);
-
-u8
+u1Byte
 phydm_vht_en_mapping(
-	void			*p_dm_void,
-	u32			wireless_mode
+	IN	PVOID			pDM_VOID,
+	IN	u4Byte			WirelessMode
 );
 
-u8
+u1Byte
 phydm_rate_id_mapping(
-	void			*p_dm_void,
-	u32			wireless_mode,
-	u8			rf_type,
-	u8			bw
+	IN	PVOID			pDM_VOID,
+	IN	u4Byte			WirelessMode,
+	IN	u1Byte			RfType,
+	IN	u1Byte			bw
 );
 
-void
-phydm_update_hal_ra_mask(
-	void			*p_dm_void,
-	u32			wireless_mode,
-	u8			rf_type,
-	u8			BW,
-	u8			mimo_ps_enable,
-	u8			disable_cck_rate,
-	u32			*ratr_bitmap_msb_in,
-	u32			*ratr_bitmap_in,
-	u8			tx_rate_level
+VOID
+phydm_UpdateHalRAMask(
+	IN	PVOID			pDM_VOID,
+	IN	u4Byte			wirelessMode,
+	IN	u1Byte			RfType,
+	IN	u1Byte			BW,
+	IN	u1Byte			MimoPs_enable,
+	IN	u1Byte			disable_cck_rate,
+	IN	u4Byte			*ratr_bitmap_msb_in,
+	IN	u4Byte			*ratr_bitmap_in,
+	IN	u1Byte			tx_rate_level
 );
 
-void
-odm_rate_adaptive_mask_init(
-	void	*p_dm_void
+VOID
+odm_RateAdaptiveMaskInit(
+	IN 	PVOID	pDM_VOID
 );
 
-void
-odm_refresh_rate_adaptive_mask(
-	void		*p_dm_void
+VOID
+odm_RefreshRateAdaptiveMask(
+	IN		PVOID		pDM_VOID
 );
 
-void
-odm_refresh_rate_adaptive_mask_mp(
-	void		*p_dm_void
+VOID
+odm_RefreshRateAdaptiveMaskMP(
+	IN		PVOID		pDM_VOID
 );
 
-void
-odm_refresh_rate_adaptive_mask_ce(
-	void		*p_dm_void
+VOID
+odm_RefreshRateAdaptiveMaskCE(
+	IN		PVOID		pDM_VOID
 );
 
-void
-odm_refresh_rate_adaptive_mask_apadsl(
-	void		*p_dm_void
+VOID
+odm_RefreshRateAdaptiveMaskAPADSL(
+	IN		PVOID		pDM_VOID
 );
 
-u8
+u1Byte 
 phydm_RA_level_decision(
-	void			*p_dm_void,
-	u32			rssi,
-	u8			ratr_state
+	IN		PVOID			pDM_VOID,
+	IN		u4Byte			rssi,
+	IN		u1Byte			Ratr_State
 );
 
-boolean
-odm_ra_state_check(
-	void		*p_dm_void,
-	s32			RSSI,
-	boolean			is_force_update,
-	u8			*p_ra_tr_state
+BOOLEAN
+ODM_RAStateCheck(
+	IN		PVOID		    pDM_VOID,
+	IN		s4Byte			RSSI,
+	IN		BOOLEAN			bForceUpdate,
+	OUT		pu1Byte			pRATRState
 );
 
-void
-odm_refresh_basic_rate_mask(
-	void		*p_dm_void
+VOID
+odm_RefreshBasicRateMask(
+	IN		PVOID		pDM_VOID
 );
-void
-odm_ra_post_action_on_assoc(
-	void	*p_dm_odm
+VOID
+ODM_RAPostActionOnAssoc(
+	IN		PVOID	pDM_Odm
 );
 
 #if (DM_ODM_SUPPORT_TYPE & (ODM_WIN | ODM_CE))
 
-u8
-odm_find_rts_rate(
-	void		*p_dm_void,
-	u8			tx_rate,
-	boolean			is_erp_protect
+u1Byte
+odm_Find_RTS_Rate(
+	IN	PVOID		pDM_VOID,
+	IN		u1Byte			Tx_Rate,
+	IN		BOOLEAN			bErpProtect
 );
 
-void
-odm_update_noisy_state(
-	void		*p_dm_void,
-	boolean		is_noisy_state_from_c2h
+VOID
+ODM_UpdateNoisyState(
+	IN	PVOID		pDM_VOID,
+	IN	BOOLEAN		bNoisyStateFromC2H
 );
 
-void
+VOID
 phydm_update_pwr_track(
-	void		*p_dm_void,
-	u8		rate
+	IN	PVOID		pDM_VOID,
+	IN	u1Byte		Rate
 );
 
 #if (DM_ODM_SUPPORT_TYPE == ODM_WIN)
 
-s32
-phydm_find_minimum_rssi(
-	struct PHY_DM_STRUCT		*p_dm_odm,
-	struct _ADAPTER		*p_adapter,
-	OUT	boolean	*p_is_link_temp
+s4Byte
+phydm_FindMinimumRSSI(
+IN		PDM_ODM_T		pDM_Odm,
+IN		PADAPTER		pAdapter,
+IN OUT	BOOLEAN	*pbLink_temp
 );
 
-void
-odm_update_init_rate_work_item_callback(
-	void	*p_context
+VOID
+ODM_UpdateInitRateWorkItemCallback(
+	IN	PVOID	pContext
 );
 
-void
-odm_rssi_dump_to_register(
-	void	*p_dm_void
+VOID
+odm_RSSIDumpToRegister(
+	IN	PVOID	pDM_VOID
 );
 
-void
-odm_refresh_ldpc_rts_mp(
-	struct _ADAPTER			*p_adapter,
-	struct PHY_DM_STRUCT			*p_dm_odm,
-	u8				m_mac_id,
-	u8				iot_peer,
-	s32				undecorated_smoothed_pwdb
+VOID
+odm_RefreshLdpcRtsMP(
+	IN	PADAPTER			pAdapter,
+	IN	PDM_ODM_T			pDM_Odm,
+	IN	u1Byte				mMacId,
+	IN	u1Byte				IOTPeer,
+	IN	s4Byte				UndecoratedSmoothedPWDB
 );
 
 #if 0
-void
-odm_dynamic_arfb_select(
-	void		*p_dm_void,
-	u8		rate,
-	boolean		collision_state
+VOID
+ODM_DynamicARFBSelect(
+	IN		PVOID		pDM_VOID,
+	IN 		u1Byte		rate,
+	IN  	BOOLEAN		Collision_State
 );
 #endif
 
-void
-odm_rate_adaptive_state_ap_init(
-	void			*PADAPTER_VOID,
-	struct sta_info	*p_entry
+VOID
+ODM_RateAdaptiveStateApInit(
+	IN	PVOID			PADAPTER_VOID,
+	IN	PRT_WLAN_STA  	pEntry
 );
 #elif (DM_ODM_SUPPORT_TYPE == ODM_CE)
 
 static void
-find_minimum_rssi(
-	struct _ADAPTER	*p_adapter
+FindMinimumRSSI(
+	IN	PADAPTER	pAdapter
 );
 
-u64
-phydm_get_rate_bitmap_ex(
-	void		*p_dm_void,
-	u32		macid,
-	u64		ra_mask,
-	u8		rssi_level,
-	u64	*dm_ra_mask,
-	u8	*dm_rte_id
+u8Byte
+PhyDM_Get_Rate_Bitmap_Ex(
+	IN	PVOID		pDM_VOID,
+	IN	u4Byte		macid,
+	IN	u8Byte		ra_mask,
+	IN	u1Byte		rssi_level,
+	OUT		u8Byte	*dm_RA_Mask,
+	OUT		u1Byte	*dm_RteID
 );
-u32
-odm_get_rate_bitmap(
-	void	*p_dm_void,
-	u32		macid,
-	u32		ra_mask,
-	u8		rssi_level
+u4Byte
+ODM_Get_Rate_Bitmap(
+	IN	PVOID	    pDM_VOID,
+	IN	u4Byte		macid,
+	IN	u4Byte 		ra_mask,
+	IN	u1Byte 		rssi_level
 );
 
-void phydm_ra_rssi_rpt_wk(void *p_context);
+void phydm_ra_rssi_rpt_wk(PVOID pContext);
 #endif/*#elif (DM_ODM_SUPPORT_TYPE == ODM_CE)*/
 
 #elif (DM_ODM_SUPPORT_TYPE & (ODM_AP))
-/*
-void
+
+VOID
 phydm_gen_ramask_h2c_AP(
-	void					*p_dm_void,
-	struct rtl8192cd_priv 	*priv,
-	struct sta_info 		*p_entry,
-	u8					rssi_level
+	IN		PVOID			pDM_VOID,
+	IN		struct rtl8192cd_priv *priv,
+	IN		PSTA_INFO_T		*pEntry,
+	IN		u1Byte			rssi_level
 );
-*/
+
 #endif/*#if (DM_ODM_SUPPORT_TYPE & (ODM_WIN| ODM_CE))*/
 
 #endif /*#ifndef	__ODMRAINFO_H__*/
+
+

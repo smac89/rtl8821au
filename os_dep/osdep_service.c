@@ -335,41 +335,15 @@ inline struct sk_buff *_rtw_pskb_copy(struct sk_buff *skb)
 
 inline int _rtw_netif_rx(_nic_hdl ndev, struct sk_buff *skb)
 {
-#if defined(PLATFORM_LINUX)
+#ifdef PLATFORM_LINUX
 	skb->dev = ndev;
 	return netif_rx(skb);
-#elif defined(PLATFORM_FREEBSD)
+#endif /* PLATFORM_LINUX */
+
+#ifdef PLATFORM_FREEBSD
 	return (*ndev->if_input)(ndev, skb);
-#else
-	rtw_warn_on(1);
-	return -1;
-#endif
+#endif /* PLATFORM_FREEBSD */
 }
-
-#ifdef CONFIG_RTW_NAPI
-inline int _rtw_netif_receive_skb(_nic_hdl ndev, struct sk_buff *skb)
-{
-#if defined(PLATFORM_LINUX)
-	skb->dev = ndev;
-	return netif_receive_skb(skb);
-#else
-	rtw_warn_on(1);
-	return -1;
-#endif
-}
-
-#ifdef CONFIG_RTW_GRO
-inline gro_result_t _rtw_napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
-{
-#if defined(PLATFORM_LINUX)
-	return napi_gro_receive(napi, skb);
-#else
-	rtw_warn_on(1);
-	return -1;
-#endif
-}
-#endif /* CONFIG_RTW_GRO */
-#endif /* CONFIG_RTW_NAPI */
 
 void _rtw_skb_queue_purge(struct sk_buff_head *list)
 {
@@ -775,48 +749,6 @@ inline int dbg_rtw_netif_rx(_nic_hdl ndev, struct sk_buff *skb, const enum mstat
 
 	return ret;
 }
-
-#ifdef CONFIG_RTW_NAPI
-inline int dbg_rtw_netif_receive_skb(_nic_hdl ndev, struct sk_buff *skb, const enum mstat_f flags, const char *func, int line)
-{
-	int ret;
-	unsigned int truesize = skb->truesize;
-
-	if (match_mstat_sniff_rules(flags, truesize))
-		RTW_INFO("DBG_MEM_ALLOC %s:%d %s, truesize=%u\n", func, line, __FUNCTION__, truesize);
-
-	ret = _rtw_netif_receive_skb(ndev, skb);
-
-	rtw_mstat_update(
-		flags
-		, MSTAT_FREE
-		, truesize
-	);
-
-	return ret;
-}
-
-#ifdef CONFIG_RTW_GRO
-inline gro_result_t dbg_rtw_napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb, const enum mstat_f flags, const char *func, int line)
-{
-	int ret;
-	unsigned int truesize = skb->truesize;
-
-	if (match_mstat_sniff_rules(flags, truesize))
-		RTW_INFO("DBG_MEM_ALLOC %s:%d %s, truesize=%u\n", func, line, __FUNCTION__, truesize);
-
-	ret = _rtw_napi_gro_receive(napi, skb);
-
-	rtw_mstat_update(
-		flags
-		, MSTAT_FREE
-		, truesize
-	);
-
-	return ret;
-}
-#endif /* CONFIG_RTW_GRO */
-#endif /* CONFIG_RTW_NAPI */
 
 inline void dbg_rtw_skb_queue_purge(struct sk_buff_head *list, enum mstat_f flags, const char *func, int line)
 {
@@ -1950,7 +1882,7 @@ inline int ATOMIC_DEC_RETURN(ATOMIC_T *v)
 * @param mode please refer to linux document
 * @return Linux specific error code
 */
-static int openFile(struct file **fpp, const char *path, int flag, int mode)
+static int openFile(struct file **fpp, char *path, int flag, int mode)
 {
 	struct file *fp;
 
@@ -1987,7 +1919,9 @@ static int readFile(struct file *fp, char *buf, int len)
 		return -EPERM;
 
 	while (sum < len) {
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0))
+		rlen = kernel_read(fp, buf + sum, len - sum, &fp->f_pos);
+#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0))
 		rlen = __vfs_read(fp, buf + sum, len - sum, &fp->f_pos);
 #else
 		rlen = fp->f_op->read(fp, buf + sum, len - sum, &fp->f_pos);
@@ -2027,11 +1961,10 @@ static int writeFile(struct file *fp, char *buf, int len)
 
 /*
 * Test if the specifi @param path is a file and readable
-* If readable, @param sz is got
 * @param path the path of the file to test
 * @return Linux specific error code
 */
-static int isFileReadable(const char *path, u32 *sz)
+static int isFileReadable(char *path)
 {
 	struct file *fp;
 	int ret = 0;
@@ -2048,14 +1981,6 @@ static int isFileReadable(const char *path, u32 *sz)
 		if (1 != readFile(fp, &buf, 1))
 			ret = PTR_ERR(fp);
 
-		if (ret == 0 && sz) {
-			#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 19, 0))
-			*sz = i_size_read(fp->f_path.dentry->d_inode);
-			#else
-			*sz = i_size_read(fp->f_dentry->d_inode);
-			#endif
-		}
-
 		set_fs(oldfs);
 		filp_close(fp, NULL);
 	}
@@ -2069,7 +1994,7 @@ static int isFileReadable(const char *path, u32 *sz)
 * @param sz how many bytes to read at most
 * @return the byte we've read, or Linux specific error code
 */
-static int retriveFromFile(const char *path, u8 *buf, u32 sz)
+static int retriveFromFile(char *path, u8 *buf, u32 sz)
 {
 	int ret = -1;
 	mm_segment_t oldfs;
@@ -2104,7 +2029,7 @@ static int retriveFromFile(const char *path, u8 *buf, u32 sz)
 * @param sz how many bytes to write at most
 * @return the byte we've written, or Linux specific error code
 */
-static int storeToFile(const char *path, u8 *buf, u32 sz)
+static int storeToFile(char *path, u8 *buf, u32 sz)
 {
 	int ret = 0;
 	mm_segment_t oldfs;
@@ -2138,29 +2063,10 @@ static int storeToFile(const char *path, u8 *buf, u32 sz)
 * @param path the path of the file to test
 * @return _TRUE or _FALSE
 */
-int rtw_is_file_readable(const char *path)
+int rtw_is_file_readable(char *path)
 {
 #ifdef PLATFORM_LINUX
-	if (isFileReadable(path, NULL) == 0)
-		return _TRUE;
-	else
-		return _FALSE;
-#else
-	/* Todo... */
-	return _FALSE;
-#endif
-}
-
-/*
-* Test if the specifi @param path is a file and readable.
-* If readable, @param sz is got
-* @param path the path of the file to test
-* @return _TRUE or _FALSE
-*/
-int rtw_is_file_readable_with_size(const char *path, u32 *sz)
-{
-#ifdef PLATFORM_LINUX
-	if (isFileReadable(path, sz) == 0)
+	if (isFileReadable(path) == 0)
 		return _TRUE;
 	else
 		return _FALSE;
@@ -2177,7 +2083,7 @@ int rtw_is_file_readable_with_size(const char *path, u32 *sz)
 * @param sz how many bytes to read at most
 * @return the byte we've read
 */
-int rtw_retrieve_from_file(const char *path, u8 *buf, u32 sz)
+int rtw_retrieve_from_file(char *path, u8 *buf, u32 sz)
 {
 #ifdef PLATFORM_LINUX
 	int ret = retriveFromFile(path, buf, sz);
@@ -2195,7 +2101,7 @@ int rtw_retrieve_from_file(const char *path, u8 *buf, u32 sz)
 * @param sz how many bytes to write at most
 * @return the byte we've written
 */
-int rtw_store_to_file(const char *path, u8 *buf, u32 sz)
+int rtw_store_to_file(char *path, u8 *buf, u32 sz)
 {
 #ifdef PLATFORM_LINUX
 	int ret = storeToFile(path, buf, sz);
@@ -2687,48 +2593,6 @@ u8 map_read8(const struct map_t *map, u16 offset)
 
 exit:
 	return val;
-}
-
-/**
-* is_null -
-*
-* Return	TRUE if c is null character
-*		FALSE otherwise.
-*/
-inline BOOLEAN is_null(char c)
-{
-	if (c == '\0')
-		return _TRUE;
-	else
-		return _FALSE;
-}
-
-/**
-* is_eol -
-*
-* Return	TRUE if c is represent for EOL (end of line)
-*		FALSE otherwise.
-*/
-inline BOOLEAN is_eol(char c)
-{
-	if (c == '\r' || c == '\n')
-		return _TRUE;
-	else
-		return _FALSE;
-}
-
-/**
-* is_space -
-*
-* Return	TRUE if c is represent for space
-*		FALSE otherwise.
-*/
-inline BOOLEAN is_space(char c)
-{
-	if (c == ' ' || c == '\t')
-		return _TRUE;
-	else
-		return _FALSE;
 }
 
 /**

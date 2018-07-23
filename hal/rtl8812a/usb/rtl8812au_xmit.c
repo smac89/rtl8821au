@@ -57,12 +57,6 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz , u8 ba
 	struct mlme_ext_priv	*pmlmeext = &padapter->mlmeextpriv;
 	struct mlme_ext_info	*pmlmeinfo = &(pmlmeext->mlmext_info);
 	sint	bmcst = IS_MCAST(pattrib->ra);
-	struct sta_info *psta = NULL;
-	u8 max_agg_num = 0;
-	u8 _max_ampdu_size = 0;
-	u8 ht_max_ampdu_size = 0;
-	u8 vht_max_ampdu_size = 0;
-	struct dvobj_priv	*pdvobjpriv = adapter_to_dvobj(padapter);
 
 #ifndef CONFIG_USE_USB_BUFFER_ALLOC_TX
 	if (padapter->registrypriv.mp_mode == 0) {
@@ -154,49 +148,7 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz , u8 ba
 
 			if (pattrib->ampdu_en == _TRUE) {
 				SET_TX_DESC_AGG_ENABLE_8812(ptxdesc, 1);
-				if (padapter->driver_tx_max_agg_num != 0xFF) {
-					max_agg_num = padapter->driver_tx_max_agg_num; /* tx desc max_agg_num (unit:2)  */
-				} else {
-					psta = pattrib->psta;
-
-					ht_max_ampdu_size = psta->htpriv.ht_cap.ampdu_params_info & 0x3; /*get other side sta ht max rx ampdu size*/
-					/*RTW_INFO("%s, ht_max_ampdu_size=0x%02x\n", __func__, ht_max_ampdu_size);*/
-
-					vht_max_ampdu_size = psta->vhtpriv.ampdu_len;
-					/*RTW_INFO("%s, vht_max_ampdu_size=0x%02x\n", __func__, vht_max_ampdu_size);*/
-
-					if (vht_max_ampdu_size > ht_max_ampdu_size)
-						_max_ampdu_size = vht_max_ampdu_size;
-					else
-						_max_ampdu_size = ht_max_ampdu_size;
-
-					/* Calculate tx desc max_agg_num (unit:2)  */
-					if (_max_ampdu_size == MAX_AMPDU_FACTOR_1M)
-						max_agg_num = (1024 * 1024 / sz) / 2;
-					else if (_max_ampdu_size == MAX_AMPDU_FACTOR_512K)
-						max_agg_num = (512 * 1024 / sz) / 2;
-					else if (_max_ampdu_size == MAX_AMPDU_FACTOR_256K)
-						max_agg_num = (256 * 1024 / sz) / 2;
-					else if (_max_ampdu_size == MAX_AMPDU_FACTOR_128K)
-						max_agg_num = (128 * 1024 / sz) / 2;
-					else if (_max_ampdu_size == MAX_AMPDU_FACTOR_64K)
-						max_agg_num = (64 * 1024 / sz) / 2;
-					else if (_max_ampdu_size == MAX_AMPDU_FACTOR_32K)
-						max_agg_num = (32 * 1024 / sz)  / 2;
-					else if (_max_ampdu_size == MAX_AMPDU_FACTOR_16K)
-						max_agg_num = (16 * 1024 / sz)  / 2;
-					else if (_max_ampdu_size == MAX_AMPDU_FACTOR_8K)
-						max_agg_num = (8 * 1024 / sz) / 2;
-					/*RTW_INFO("%s, sz=%u , _max_ampdu_size=0x%02x\n", __func__, sz, _max_ampdu_size);*/
-					if (psta->max_agg_num_minimal_record == 0 || psta->max_agg_num_minimal_record > max_agg_num)
-						psta->max_agg_num_minimal_record = max_agg_num;
-					if (pdvobjpriv->traffic_stat.cur_tx_tp > 10 && pdvobjpriv->traffic_stat.cur_rx_tp > 10)
-						max_agg_num = psta->max_agg_num_minimal_record;
-				}
-				if (max_agg_num >= 0x1F)
-					max_agg_num = 0x1F;
-				/* RTW_INFO("%s, max_agg_num=0x%02x\n", __func__, max_agg_num); */
-				SET_TX_DESC_MAX_AGG_NUM_8812(ptxdesc, max_agg_num);
+				SET_TX_DESC_MAX_AGG_NUM_8812(ptxdesc, 0x1f);
 				/* Set A-MPDU aggregation. */
 				SET_TX_DESC_AMPDU_DENSITY_8812(ptxdesc, pattrib->ampdu_spacing);
 			} else
@@ -265,7 +217,15 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz , u8 ba
 
 		SET_TX_DESC_USE_RATE_8812(ptxdesc, 1);
 
-		SET_TX_DESC_TX_RATE_8812(ptxdesc, MRateToHwRate(pattrib->rate));
+#ifdef CONFIG_INTEL_PROXIM
+		if ((padapter->proximity.proxim_on == _TRUE) && (pattrib->intel_proxim == _TRUE)) {
+			RTW_INFO("\n %s pattrib->rate=%d\n", __FUNCTION__, pattrib->rate);
+			SET_TX_DESC_TX_RATE_8812(ptxdesc, pattrib->rate);
+		} else
+#endif
+		{
+			SET_TX_DESC_TX_RATE_8812(ptxdesc, MRateToHwRate(pattrib->rate));
+		}
 
 		/* VHT NDPA or HT NDPA Packet for Beamformer. */
 #ifdef CONFIG_BEAMFORMING
@@ -322,13 +282,39 @@ static s32 update_txdesc(struct xmit_frame *pxmitframe, u8 *pmem, s32 sz , u8 ba
 	}
 
 #ifdef CONFIG_ANTENNA_DIVERSITY
-	odm_set_tx_ant_by_tx_info(&pHalData->odmpriv, ptxdesc, pxmitframe->attrib.mac_id);
+	ODM_SetTxAntByTxInfo(&pHalData->odmpriv, ptxdesc, pxmitframe->attrib.mac_id);
 #endif
 
 #ifdef CONFIG_BEAMFORMING
 	SET_TX_DESC_GID_8812(ptxdesc, pattrib->txbf_g_id);
 	SET_TX_DESC_PAID_8812(ptxdesc, pattrib->txbf_p_aid);
 #endif
+
+/* injected frame */
+	if(pattrib->inject == 0xa5) {
+		SET_TX_DESC_RETRY_LIMIT_ENABLE_8812(ptxdesc, 1);
+		if (pattrib->retry_ctrl == _TRUE) {
+			SET_TX_DESC_DATA_RETRY_LIMIT_8812(ptxdesc, 6);
+		} else {
+			SET_TX_DESC_DATA_RETRY_LIMIT_8812(ptxdesc, 0);
+		}
+		if(pattrib->sgi == _TRUE) {
+			SET_TX_DESC_DATA_SHORT_8812(ptxdesc, 1);
+		} else {
+			SET_TX_DESC_DATA_SHORT_8812(ptxdesc, 0);
+		}
+		SET_TX_DESC_USE_RATE_8812(ptxdesc, 1);
+		SET_TX_DESC_TX_RATE_8812(ptxdesc, MRateToHwRate(pattrib->rate));
+		if (pattrib->ldpc)
+			SET_TX_DESC_DATA_LDPC_8812(ptxdesc, 1);
+		SET_TX_DESC_DATA_STBC_8812(ptxdesc, pattrib->stbc & 3);
+		//SET_TX_DESC_GF_8812(ptxdesc, 1); // no MCS rates if sets, GreenField?
+		//SET_TX_DESC_LSIG_TXOP_EN_8812(ptxdesc, 1);
+		//SET_TX_DESC_HTC_8812(ptxdesc, 1);
+		//SET_TX_DESC_NO_ACM_8812(ptxdesc, 1);
+		SET_TX_DESC_DATA_BW_8812(ptxdesc, pattrib->bwmode); // 0 - 20 MHz, 1 - 40 MHz, 2 - 80 MHz
+	}
+
 	rtl8812a_cal_txdesc_chksum(ptxdesc);
 	_dbg_dump_tx_info(padapter, pxmitframe->frame_tag, ptxdesc);
 	return pull;
@@ -356,13 +342,15 @@ s32 rtl8812au_xmit_buf_handler(PADAPTER padapter)
 	pxmitpriv = &padapter->xmitpriv;
 
 	ret = _rtw_down_sema(&pxmitpriv->xmit_sema);
-	if (ret == _FAIL)
+	if (_FAIL == ret) {
 		return _FAIL;
+	}
 
-	if (RTW_CANNOT_RUN(padapter))
+	if (RTW_CANNOT_RUN(padapter)) {
 		return _FAIL;
+	}
 
-	if (check_pending_xmitbuf(pxmitpriv) == _FALSE)
+	if (rtw_mi_check_pending_xmitbuf(padapter) == 0)
 		return _SUCCESS;
 
 #ifdef CONFIG_LPS_LCLK
@@ -370,24 +358,24 @@ s32 rtl8812au_xmit_buf_handler(PADAPTER padapter)
 	if (ret != _SUCCESS) {
 		return _SUCCESS;
 	}
-#endif /* CONFIG_LPS_LCLK */
+#endif
 
 	do {
 		pxmitbuf = dequeue_pending_xmitbuf(pxmitpriv);
 		if (pxmitbuf == NULL)
 			break;
 
-		/* only XMITBUF_DATA & XMITBUF_MGNT */
-		rtw_write_port_and_wait(padapter, pxmitbuf->ff_hwaddr, pxmitbuf->len, (unsigned char *)pxmitbuf, 500);
+		rtw_write_port(padapter, pxmitbuf->ff_hwaddr, pxmitbuf->len, (unsigned char *)pxmitbuf);
+
 	} while (1);
 
 #ifdef CONFIG_LPS_LCLK
 	rtw_unregister_tx_alive(padapter);
-#endif /*CONFIG_LPS_LCLK */
+#endif
 
 	return _SUCCESS;
 }
-#endif /* CONFIG_XMIT_THREAD_MODE */
+#endif
 
 
 /* for non-agg data frame or  management frame */
@@ -441,18 +429,14 @@ static s32 rtw_dump_xframe(_adapter *padapter, struct xmit_frame *pxmitframe)
 #ifdef CONFIG_XMIT_THREAD_MODE
 		pxmitbuf->len = w_sz;
 		pxmitbuf->ff_hwaddr = ff_hwaddr;
-
-		if (pxmitbuf->buf_tag == XMITBUF_CMD)
-			/* download rsvd page */
-			inner_ret = rtw_write_port(padapter, ff_hwaddr, w_sz, (unsigned char *)pxmitbuf);
-		else
-			enqueue_pending_xmitbuf(pxmitpriv, pxmitbuf);
+		enqueue_pending_xmitbuf(pxmitpriv, pxmitbuf);
 #else
 		inner_ret = rtw_write_port(padapter, ff_hwaddr, w_sz, (unsigned char *)pxmitbuf);
 #endif
 		rtw_count_tx_stats(padapter, pxmitframe, sz);
 
 		/* RTW_INFO("rtw_write_port, w_sz=%d, sz=%d, txdesc_sz=%d, tid=%d\n", w_sz, sz, w_sz-sz, pattrib->priority);       */
+		RT_TRACE(_module_rtl871x_xmit_c_,_drv_info_,("rtw_write_port, w_sz=%d\n", w_sz));
 
 		mem_addr += w_sz;
 
@@ -782,18 +766,7 @@ agg_end:
 	ff_hwaddr = rtw_get_ff_hwaddr(pfirstframe);
 	/* RTW_INFO("%s ===================================== write port,buf_size(%d)\n",__FUNCTION__,pbuf_tail); */
 	/* xmit address == ((xmit_frame*)pxmitbuf->priv_data)->buf_addr */
-#ifdef CONFIG_XMIT_THREAD_MODE
-	pxmitbuf->len = pbuf_tail;
-	pxmitbuf->ff_hwaddr = ff_hwaddr;
-
-	if (pxmitbuf->buf_tag == XMITBUF_CMD)
-		/* download rsvd page*/
-		rtw_write_port(padapter, ff_hwaddr, pbuf_tail, (u8 *)pxmitbuf);
-	else
-		enqueue_pending_xmitbuf(pxmitpriv, pxmitbuf);
-#else
 	rtw_write_port(padapter, ff_hwaddr, pbuf_tail, (u8 *)pxmitbuf);
-#endif
 
 
 	/* 3 5. update statisitc */
@@ -912,7 +885,7 @@ static s32 pre_xmitframe(_adapter *padapter, struct xmit_frame *pxmitframe)
 	if (rtw_xmit_ac_blocked(padapter) == _TRUE)
 		goto enqueue;
 
-	if (DEV_STA_LG_NUM(padapter->dvobj))
+	if (padapter->dvobj->iface_state.lg_sta_num)
 		goto enqueue;
 
 	pxmitbuf = rtw_alloc_xmitbuf(pxmitpriv);
@@ -1069,9 +1042,9 @@ s32 rtl8812au_hostap_mgnt_xmit_entry(_adapter *padapter, _pkt *pkt)
 	ptxdesc->txdw4 |= cpu_to_le32(BIT(7)); /* Hw set sequence number */
 	ptxdesc->txdw3 |= cpu_to_le32((8 << 28)); /* set bit3 to 1. Suugested by TimChen. 2009.12.29. */
 
-
-	rtl8188eu_cal_txdesc_chksum(ptxdesc);
-	/* ----- end of fill tx desc ----- */
+	//rtl8188eu_cal_txdesc_chksum(ptxdesc);
+	rtl8812au_cal_txdesc_chksum(ptxdesc);
+	// ----- end of fill tx desc -----
 
 	/*  */
 	skb_put(pxmit_skb, len + TXDESC_SIZE);
@@ -1088,8 +1061,7 @@ s32 rtl8812au_hostap_mgnt_xmit_entry(_adapter *padapter, _pkt *pkt)
 	pipe = usb_sndbulkpipe(pdvobj->pusbdev, pHalData->Queue2EPNum[(u8)MGT_QUEUE_INX] & 0x0f);
 
 	usb_fill_bulk_urb(urb, pdvobj->pusbdev, pipe,
-		pxmit_skb->data, pxmit_skb->len, rtl8192cu_hostap_mgnt_xmit_cb, pxmit_skb);
-
+	pxmit_skb->data, pxmit_skb->len, rtl8812au_hostap_mgnt_xmit_cb, pxmit_skb);
 	urb->transfer_flags |= URB_ZERO_PACKET;
 	usb_anchor_urb(urb, &phostapdpriv->anchored);
 	rc = usb_submit_urb(urb, GFP_ATOMIC);
@@ -1110,3 +1082,4 @@ _exit:
 
 }
 #endif
+

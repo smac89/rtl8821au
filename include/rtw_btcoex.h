@@ -53,13 +53,6 @@ typedef enum _BT_CTRL_STATUS {
 	BT_STATUS_MAX
 } BT_CTRL_STATUS, *PBT_CTRL_STATUS;
 
-typedef enum _BTCOEX_SUSPEND_STATE {
-	BTCOEX_SUSPEND_STATE_RESUME					= 0x0,
-	BTCOEX_SUSPEND_STATE_SUSPEND				= 0x1,
-	BTCOEX_SUSPEND_STATE_SUSPEND_KEEP_ANT		= 0x2,
-	BTCOEX_SUSPEND_STATE_MAX
-} BTCOEX_SUSPEND_STATE, *PBTCOEX_SUSPEND_STATE;
-
 #define SET_BT_MP_OPER_RET(OpCode, StatusCode)						((OpCode << 8) | StatusCode)
 #define GET_OP_CODE_FROM_BT_MP_OPER_RET(RetCode)					((RetCode & 0xF0) >> 8)
 #define GET_STATUS_CODE_FROM_BT_MP_OPER_RET(RetCode)				(RetCode & 0x0F)
@@ -382,6 +375,7 @@ void rtw_btcoex_BtInfoNotify(PADAPTER, u8 length, u8 *tmpBuf);
 void rtw_btcoex_BtMpRptNotify(PADAPTER, u8 length, u8 *tmpBuf);
 void rtw_btcoex_SuspendNotify(PADAPTER, u8 state);
 void rtw_btcoex_HaltNotify(PADAPTER);
+void rtw_btcoex_ScoreBoardStatusNotify(PADAPTER, u8 length, u8 *tmpBuf);
 void rtw_btcoex_switchband_notify(u8 under_scan, u8 band_type);
 void rtw_btcoex_SwitchBtTRxMask(PADAPTER);
 void rtw_btcoex_Switch(PADAPTER, u8 enable);

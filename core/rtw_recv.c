@@ -79,11 +79,6 @@ sint _rtw_init_recv_priv(struct recv_priv *precvpriv, _adapter *padapter)
 
 	_rtw_spinlock_init(&precvpriv->lock);
 
-#ifdef CONFIG_RECV_THREAD_MODE
-	_rtw_init_sema(&precvpriv->recv_sema, 0);
-	_rtw_init_sema(&precvpriv->terminate_recvthread_sema, 0);
-#endif
-
 	_rtw_init_queue(&precvpriv->free_recv_queue);
 	_rtw_init_queue(&precvpriv->recv_pending_queue);
 	_rtw_init_queue(&precvpriv->uc_swdec_pending_queue);
@@ -788,11 +783,6 @@ sint recv_decache(union recv_frame *precv_frame, u8 bretry, struct stainfo_rxcac
 
 	if (1) { /* if(bretry) */
 		if (seq_ctrl == prxcache->tid_rxseq[tid]) {
-			/* for non-AMPDU case	*/
-			precv_frame->u.hdr.psta->sta_stats.duplicate_cnt++;
-
-			if (precv_frame->u.hdr.psta->sta_stats.duplicate_cnt % 100 == 0)
-				RTW_INFO("%s: seq=%d\n", __func__, precv_frame->u.hdr.attrib.seq_num);
 
 			return _FAIL;
 		}
@@ -1039,7 +1029,6 @@ void count_rx_stats(_adapter *padapter, union recv_frame *prframe, struct sta_in
 		pstats->rx_data_pkts++;
 		pstats->rx_bytes += sz;
 
-		pstats->rxratecnt[pattrib->data_rate]++;
 		/*record rx packets for every tid*/
 		pstats->rx_data_qos_pkts[pattrib->priority]++;
 
@@ -1163,7 +1152,7 @@ sint sta2sta_data_frame(
 				process_pwrbit_data(adapter, precv_frame);
 
 				/* if NULL-frame, check pwrbit */
-				if ((get_frame_sub_type(ptr) & WIFI_DATA_NULL) == WIFI_DATA_NULL) {
+				if ((GetFrameSubType(ptr) & WIFI_DATA_NULL) == WIFI_DATA_NULL) {
 					/* NULL-frame with pwrbit=1, buffer_STA should buffer frames for sleep_STA */
 					if (GetPwrMgt(ptr)) {
 						/* it would be triggered when we are off channel and receiving NULL DATA */
@@ -1185,7 +1174,7 @@ sint sta2sta_data_frame(
 					goto exit;
 				}
 
-				if ((get_frame_sub_type(ptr) & WIFI_QOS_DATA_TYPE) == WIFI_QOS_DATA_TYPE)
+				if ((GetFrameSubType(ptr) & WIFI_QOS_DATA_TYPE) == WIFI_QOS_DATA_TYPE)
 					process_wmmps_data(adapter, precv_frame);
 
 				ptdls_sta->tdls_sta_state &= ~(TDLS_WAIT_PTR_STATE);
@@ -1225,7 +1214,7 @@ sint sta2sta_data_frame(
 
 	} else if (check_fwstate(pmlmepriv, WIFI_MP_STATE) == _TRUE) {
 		_rtw_memcpy(pattrib->dst, GetAddr1Ptr(ptr), ETH_ALEN);
-		_rtw_memcpy(pattrib->src, get_addr2_ptr(ptr), ETH_ALEN);
+		_rtw_memcpy(pattrib->src, GetAddr2Ptr(ptr), ETH_ALEN);
 		_rtw_memcpy(pattrib->bssid, GetAddr3Ptr(ptr), ETH_ALEN);
 		_rtw_memcpy(pattrib->ra, pattrib->dst, ETH_ALEN);
 		_rtw_memcpy(pattrib->ta, pattrib->src, ETH_ALEN);
@@ -1337,11 +1326,10 @@ sint ap2sta_data_frame(
 			goto exit;
 		}
 
-		/*if ((get_frame_sub_type(ptr) & WIFI_QOS_DATA_TYPE) == WIFI_QOS_DATA_TYPE) {
+		if ((GetFrameSubType(ptr) & WIFI_QOS_DATA_TYPE) == WIFI_QOS_DATA_TYPE) {
 		}
-		*/
 
-		if (get_frame_sub_type(ptr) & BIT(6)) {
+		if (GetFrameSubType(ptr) & BIT(6)) {
 			/* No data, will not indicate to upper layer, temporily count it here */
 			count_rx_stats(adapter, precv_frame, *psta);
 			ret = RTW_RX_HANDLED;
@@ -1351,7 +1339,7 @@ sint ap2sta_data_frame(
 	} else if ((check_fwstate(pmlmepriv, WIFI_MP_STATE) == _TRUE) &&
 		   (check_fwstate(pmlmepriv, _FW_LINKED) == _TRUE)) {
 		_rtw_memcpy(pattrib->dst, GetAddr1Ptr(ptr), ETH_ALEN);
-		_rtw_memcpy(pattrib->src, get_addr2_ptr(ptr), ETH_ALEN);
+		_rtw_memcpy(pattrib->src, GetAddr2Ptr(ptr), ETH_ALEN);
 		_rtw_memcpy(pattrib->bssid, GetAddr3Ptr(ptr), ETH_ALEN);
 		_rtw_memcpy(pattrib->ra, pattrib->dst, ETH_ALEN);
 		_rtw_memcpy(pattrib->ta, pattrib->src, ETH_ALEN);
@@ -1451,10 +1439,10 @@ bypass_deauth7:
 
 		process_pwrbit_data(adapter, precv_frame);
 
-		if ((get_frame_sub_type(ptr) & WIFI_QOS_DATA_TYPE) == WIFI_QOS_DATA_TYPE)
+		if ((GetFrameSubType(ptr) & WIFI_QOS_DATA_TYPE) == WIFI_QOS_DATA_TYPE)
 			process_wmmps_data(adapter, precv_frame);
 
-		if (get_frame_sub_type(ptr) & BIT(6)) {
+		if (GetFrameSubType(ptr) & BIT(6)) {
 			/* No data, will not indicate to upper layer, temporily count it here */
 			count_rx_stats(adapter, precv_frame, *psta);
 			ret = RTW_RX_HANDLED;
@@ -1464,7 +1452,7 @@ bypass_deauth7:
 		   (check_fwstate(pmlmepriv, _FW_LINKED) == _TRUE)) {
 		/* RTW_INFO("%s ,in WIFI_MP_STATE\n",__func__); */
 		_rtw_memcpy(pattrib->dst, GetAddr1Ptr(ptr), ETH_ALEN);
-		_rtw_memcpy(pattrib->src, get_addr2_ptr(ptr), ETH_ALEN);
+		_rtw_memcpy(pattrib->src, GetAddr2Ptr(ptr), ETH_ALEN);
 		_rtw_memcpy(pattrib->bssid, GetAddr3Ptr(ptr), ETH_ALEN);
 		_rtw_memcpy(pattrib->ra, pattrib->dst, ETH_ALEN);
 		_rtw_memcpy(pattrib->ta, pattrib->src, ETH_ALEN);
@@ -1516,7 +1504,7 @@ sint validate_recv_ctrl_frame(_adapter *padapter, union recv_frame *precv_frame)
 	if (!_rtw_memcmp(GetAddr1Ptr(pframe), adapter_mac_addr(padapter), ETH_ALEN))
 		return _FAIL;
 
-	psta = rtw_get_stainfo(pstapriv, get_addr2_ptr(pframe));
+	psta = rtw_get_stainfo(pstapriv, GetAddr2Ptr(pframe));
 	if (psta == NULL)
 		return _FAIL;
 
@@ -1524,7 +1512,7 @@ sint validate_recv_ctrl_frame(_adapter *padapter, union recv_frame *precv_frame)
 	psta->sta_stats.rx_ctrl_pkts++;
 
 	/* only handle ps-poll */
-	if (get_frame_sub_type(pframe) == WIFI_PSPOLL) {
+	if (GetFrameSubType(pframe) == WIFI_PSPOLL) {
 #ifdef CONFIG_AP_MODE
 		u16 aid;
 		u8 wmmps_ac = 0;
@@ -1638,9 +1626,9 @@ sint validate_recv_ctrl_frame(_adapter *padapter, union recv_frame *precv_frame)
 			}
 		}
 #endif /* CONFIG_AP_MODE */
-	} else if (get_frame_sub_type(pframe) == WIFI_NDPA) {
+	} else if (GetFrameSubType(pframe) == WIFI_NDPA) {
 #ifdef CONFIG_BEAMFORMING
-		rtw_beamforming_get_ndpa_frame(padapter, precv_frame);
+		beamforming_get_ndpa_frame(padapter, precv_frame);
 #endif/*CONFIG_BEAMFORMING*/
 	}
 
@@ -1673,14 +1661,14 @@ sint validate_recv_mgnt_frame(PADAPTER padapter, union recv_frame *precv_frame)
 
 	{
 		/* for rx pkt statistics */
-		struct sta_info *psta = rtw_get_stainfo(&padapter->stapriv, get_addr2_ptr(precv_frame->u.hdr.rx_data));
+		struct sta_info *psta = rtw_get_stainfo(&padapter->stapriv, GetAddr2Ptr(precv_frame->u.hdr.rx_data));
 		if (psta) {
 			psta->sta_stats.rx_mgnt_pkts++;
-			if (get_frame_sub_type(precv_frame->u.hdr.rx_data) == WIFI_BEACON)
+			if (GetFrameSubType(precv_frame->u.hdr.rx_data) == WIFI_BEACON)
 				psta->sta_stats.rx_beacon_pkts++;
-			else if (get_frame_sub_type(precv_frame->u.hdr.rx_data) == WIFI_PROBEREQ)
+			else if (GetFrameSubType(precv_frame->u.hdr.rx_data) == WIFI_PROBEREQ)
 				psta->sta_stats.rx_probereq_pkts++;
-			else if (get_frame_sub_type(precv_frame->u.hdr.rx_data) == WIFI_PROBERSP) {
+			else if (GetFrameSubType(precv_frame->u.hdr.rx_data) == WIFI_PROBERSP) {
 				if (_rtw_memcmp(adapter_mac_addr(padapter), GetAddr1Ptr(precv_frame->u.hdr.rx_data), ETH_ALEN) == _TRUE)
 					psta->sta_stats.rx_probersp_pkts++;
 				else if (is_broadcast_mac_addr(GetAddr1Ptr(precv_frame->u.hdr.rx_data))
@@ -1726,7 +1714,7 @@ sint validate_recv_mgnt_frame(PADAPTER padapter, union recv_frame *precv_frame)
 
 		case 3:
 			_rtw_memcpy(pattrib->ra, GetAddr1Ptr(ptr), ETH_ALEN);
-			_rtw_memcpy(pattrib->ta, get_addr2_ptr(ptr), ETH_ALEN);
+			_rtw_memcpy(pattrib->ta, GetAddr2Ptr(ptr), ETH_ALEN);
 			break;
 
 		default:
@@ -1797,7 +1785,7 @@ sint validate_recv_data_frame(_adapter *adapter, union recv_frame *precv_frame)
 
 	case 3:
 		_rtw_memcpy(pattrib->ra, GetAddr1Ptr(ptr), ETH_ALEN);
-		_rtw_memcpy(pattrib->ta, get_addr2_ptr(ptr), ETH_ALEN);
+		_rtw_memcpy(pattrib->ta, GetAddr2Ptr(ptr), ETH_ALEN);
 		ret = _FAIL;
 		break;
 
@@ -1839,9 +1827,9 @@ sint validate_recv_data_frame(_adapter *adapter, union recv_frame *precv_frame)
 		pattrib->hdrlen = pattrib->to_fr_ds == 3 ? 32 : 26;
 
 		if (pattrib->priority != 0 && pattrib->priority != 3)
-			adapter->recvpriv.is_any_non_be_pkts = _TRUE;
+			adapter->recvpriv.bIsAnyNonBEPkts = _TRUE;
 		else
-			adapter->recvpriv.is_any_non_be_pkts = _FALSE;
+			adapter->recvpriv.bIsAnyNonBEPkts = _FALSE;
 	} else {
 		pattrib->priority = 0;
 		pattrib->hdrlen = pattrib->to_fr_ds == 3 ? 30 : 24;
@@ -1897,7 +1885,7 @@ static sint validate_80211w_mgmt(_adapter *adapter, union recv_frame *precv_fram
 	u8 subtype;
 
 	type =  GetFrameType(ptr);
-	subtype = get_frame_sub_type(ptr); /* bit(7)~bit(2) */
+	subtype = GetFrameSubType(ptr); /* bit(7)~bit(2) */
 
 	if (adapter->securitypriv.binstallBIPkey == _TRUE) {
 		/* unicast management frame decrypt */
@@ -1905,7 +1893,7 @@ static sint validate_80211w_mgmt(_adapter *adapter, union recv_frame *precv_fram
 		    (subtype == WIFI_DEAUTH || subtype == WIFI_DISASSOC || subtype == WIFI_ACTION)) {
 			u8 *ppp, *mgmt_DATA;
 			u32 data_len = 0;
-			ppp = get_addr2_ptr(ptr);
+			ppp = GetAddr2Ptr(ptr);
 
 			pattrib->bdecrypted = 0;
 			pattrib->encrypt = _AES_;
@@ -1913,7 +1901,7 @@ static sint validate_80211w_mgmt(_adapter *adapter, union recv_frame *precv_fram
 			/* set iv and icv length */
 			SET_ICE_IV_LEN(pattrib->iv_len, pattrib->icv_len, pattrib->encrypt);
 			_rtw_memcpy(pattrib->ra, GetAddr1Ptr(ptr), ETH_ALEN);
-			_rtw_memcpy(pattrib->ta, get_addr2_ptr(ptr), ETH_ALEN);
+			_rtw_memcpy(pattrib->ta, GetAddr2Ptr(ptr), ETH_ALEN);
 			/* actual management data frame body */
 			data_len = pattrib->pkt_len - pattrib->hdrlen - pattrib->iv_len - pattrib->icv_len;
 			mgmt_DATA = rtw_zmalloc(data_len);
@@ -1970,7 +1958,7 @@ static sint validate_80211w_mgmt(_adapter *adapter, union recv_frame *precv_fram
 			}
 		} /* 802.11w protect */
 		else {
-			psta = rtw_get_stainfo(pstapriv, get_addr2_ptr(ptr));
+			psta = rtw_get_stainfo(pstapriv, GetAddr2Ptr(ptr));
 
 			if (subtype == WIFI_ACTION && psta && psta->bpairwise_key_installed == _TRUE) {
 				/* according 802.11-2012 standard, these five types are not robust types */
@@ -2079,7 +2067,7 @@ sint validate_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
 	}
 
 	type =  GetFrameType(ptr);
-	subtype = get_frame_sub_type(ptr); /* bit(7)~bit(2) */
+	subtype = GetFrameSubType(ptr); /* bit(7)~bit(2) */
 
 	pattrib->to_fr_ds = get_tofr_ds(ptr);
 
@@ -2155,7 +2143,7 @@ sint validate_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
 			}
 		} else {
 
-			if (rtw_wapi_drop_for_key_absent(adapter, get_addr2_ptr(ptr))) {
+			if (rtw_wapi_drop_for_key_absent(adapter, GetAddr2Ptr(ptr))) {
 				retval = _FAIL;
 				WAPI_TRACE(WAPI_RX, "drop for key absent for rx\n");
 				DBG_COUNTER(adapter->rx_logs.core_rx_pre_data_wapi_key_err);
@@ -3310,7 +3298,6 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
 	u8 type, subtype;
 	struct mp_priv *pmppriv = &adapter->mppriv;
 	struct mp_tx		*pmptx;
-	unsigned char	*sa , *da, *bs;
 
 	pmptx = &pmppriv->tx;
 
@@ -3318,7 +3305,7 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
 	if (1) {
 		u8 bDumpRxPkt;
 		type =  GetFrameType(ptr);
-		subtype = get_frame_sub_type(ptr); /* bit(7)~bit(2)	 */
+		subtype = GetFrameSubType(ptr); /* bit(7)~bit(2)	 */
 
 		rtw_hal_get_def_var(adapter, HAL_DEF_DBG_DUMP_RXPKT, &(bDumpRxPkt));
 		if (bDumpRxPkt == 1) { /* dump all rx packets */
@@ -3338,27 +3325,11 @@ int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
 			ret = _FAIL;
 		}
 	}
- 	if (pmppriv->bSetRxBssid == _TRUE) {
-
-		sa = get_addr2_ptr(ptr);
-		da = GetAddr1Ptr(ptr);
-		bs = GetAddr3Ptr(ptr);
-		type =	GetFrameType(ptr);
-		subtype = get_frame_sub_type(ptr); /* bit(7)~bit(2)  */
-
-		if (_rtw_memcmp(bs, adapter->mppriv.network_macaddr, ETH_ALEN) == _FALSE)
-			ret = _FAIL;
-
-		RTW_DBG("############ type:0x%02x subtype:0x%02x #################\n", type, subtype);
-		RTW_DBG("A2 sa %02X:%02X:%02X:%02X:%02X:%02X \n", *(sa) , *(sa + 1), *(sa+ 2), *(sa + 3), *(sa + 4), *(sa + 5));
-		RTW_DBG("A1 da %02X:%02X:%02X:%02X:%02X:%02X \n", *(da) , *(da + 1), *(da+ 2), *(da + 3), *(da + 4), *(da + 5));
-		RTW_DBG("A3 bs %02X:%02X:%02X:%02X:%02X:%02X \n --------------------------\n", *(bs) , *(bs + 1), *(bs+ 2), *(bs + 3), *(bs + 4), *(bs + 5));
-	}
 
 	if (!adapter->mppriv.bmac_filter)
 		return ret;
 
-	if (_rtw_memcmp(get_addr2_ptr(ptr), adapter->mppriv.mac_filter, ETH_ALEN) == _FALSE)
+	if (_rtw_memcmp(GetAddr2Ptr(ptr), adapter->mppriv.mac_filter, ETH_ALEN) == _FALSE)
 		ret = _FAIL;
 
 	return ret;
@@ -3513,7 +3484,7 @@ int mp_recv_frame(_adapter *padapter, union recv_frame *rframe)
 
 				case 3:
 					_rtw_memcpy(pattrib->ra, GetAddr1Ptr(ptr), ETH_ALEN);
-					_rtw_memcpy(pattrib->ta, get_addr2_ptr(ptr), ETH_ALEN);
+					_rtw_memcpy(pattrib->ta, GetAddr2Ptr(ptr), ETH_ALEN);
 					ret = _FAIL;
 					break;
 
@@ -3569,7 +3540,7 @@ exit:
 }
 #endif
 
-static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe, u8 *buf)
+static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe)
 {
 #define CHAN2FREQ(a) ((a < 14) ? (2407+5*a) : (5000+5*a))
 
@@ -3602,11 +3573,6 @@ static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe, 
 	/* (0 << IEEE80211_RADIOTAP_AMPDU_STATUS)      | \ */
 	/* (0 << IEEE80211_RADIOTAP_VHT)               | \ */
 #endif
-
-#ifndef IEEE80211_RADIOTAP_RX_FLAGS
-#define IEEE80211_RADIOTAP_RX_FLAGS 14
-#endif
-
 #ifndef IEEE80211_RADIOTAP_MCS
 #define IEEE80211_RADIOTAP_MCS 19
 #endif
@@ -3627,7 +3593,7 @@ static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe, 
 
 	u16 tmp_16bit = 0;
 
-	u8 data_rate[] = {
+	static u8 data_rate[] = {
 		2, 4, 11, 22, /* CCK */
 		12, 18, 24, 36, 48, 72, 93, 108, /* OFDM */
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, /* HT MCS index */
@@ -3643,13 +3609,47 @@ static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe, 
 	struct ieee80211_radiotap_header *rtap_hdr = NULL;
 	u8 *ptr = NULL;
 
+#ifdef CONFIG_RADIOTAP_WITH_RXDESC
+	u8 hdr_buf[128] = {0};
+#else
 	u8 hdr_buf[64] = {0};
+#endif
 	u16 rt_len = 8;
+	u32 tmp_32bit;
+	int i;
 
 	/* create header */
 	rtap_hdr = (struct ieee80211_radiotap_header *)&hdr_buf[0];
 	rtap_hdr->it_version = PKTHDR_RADIOTAP_VERSION;
 
+	if(pHalData->NumTotalRFPath>0 && pattrib->physt) {
+		rtap_hdr->it_present |=	(1<<IEEE80211_RADIOTAP_EXT) |
+			(1<<IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE);
+
+		if(pHalData->NumTotalRFPath>1) {
+			tmp_32bit = (1<<IEEE80211_RADIOTAP_ANTENNA) |
+				(1<<IEEE80211_RADIOTAP_DBM_ANTSIGNAL) |
+				(1<<IEEE80211_RADIOTAP_EXT) |
+				(1<<IEEE80211_RADIOTAP_RADIOTAP_NAMESPACE);
+
+			for(i=0; i<pHalData->NumTotalRFPath-1; i++) {
+				memcpy(&hdr_buf[rt_len], &tmp_32bit, 4);
+				rt_len += 4;
+			}
+		}
+		tmp_32bit = (1<<IEEE80211_RADIOTAP_ANTENNA) |
+			(1<<IEEE80211_RADIOTAP_DBM_ANTSIGNAL);
+
+#ifdef CONFIG_RADIOTAP_WITH_RXDESC
+		tmp_32bit |= (1 << IEEE80211_RADIOTAP_VENDOR_NAMESPACE);
+#endif
+		memcpy(&hdr_buf[rt_len], &tmp_32bit, 4);
+		rt_len += 4;
+	} else {
+#ifdef CONFIG_RADIOTAP_WITH_RXDESC
+		rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_VENDOR_NAMESPACE);
+#endif
+	}
 	/* tsft */
 	if (pattrib->tsfl) {
 		u64 tmp_64bit;
@@ -3707,13 +3707,13 @@ static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe, 
 	tmp_16bit = 0;
 	rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_CHANNEL);
 	tmp_16bit = CHAN2FREQ(rtw_get_oper_ch(padapter));
-	/*tmp_16bit = CHAN2FREQ(pHalData->current_channel);*/
+	/*tmp_16bit = CHAN2FREQ(pHalData->CurrentChannel);*/
 	memcpy(&hdr_buf[rt_len], &tmp_16bit, 2);
 	rt_len += 2;
 
 	/* channel flags */
 	tmp_16bit = 0;
-	if (pHalData->current_band_type == 0)
+	if (pHalData->CurrentBandType == 0)
 		tmp_16bit |= cpu_to_le16(IEEE80211_CHAN_2GHZ);
 	else
 		tmp_16bit |= cpu_to_le16(IEEE80211_CHAN_5GHZ);
@@ -3731,28 +3731,35 @@ static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe, 
 	memcpy(&hdr_buf[rt_len], &tmp_16bit, 2);
 	rt_len += 2;
 
-	/* dBm Antenna Signal */
-	rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL);
-	hdr_buf[rt_len] = pattrib->phy_info.RecvSignalPower;
-	rt_len += 1;
+	if(pattrib->physt) {
+		/* dBm Antenna Signal */
+		rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_DBM_ANTSIGNAL);
+		hdr_buf[rt_len] = pattrib->phy_info.RecvSignalPower;
+		rt_len += 1;
 
 #if 0
 	/* dBm Antenna Noise */
 	rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_DBM_ANTNOISE);
 	hdr_buf[rt_len] = 0;
 	rt_len += 1;
+#endif
+
+		rt_len++;	// alignment
+	}
 
 	/* Signal Quality */
 	rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_LOCK_QUALITY);
-	hdr_buf[rt_len] = pattrib->phy_info.SignalQuality;
-	rt_len += 1;
-#endif
-
+	tmp_16bit = cpu_to_le16(pattrib->phy_info.SignalQuality);
+	memcpy(&hdr_buf[rt_len], &tmp_16bit, 2);
+	rt_len += 2;
+#if 0
 	/* Antenna */
 	rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_ANTENNA);
-	hdr_buf[rt_len] = 0; /* pHalData->rf_type; */
+	hdr_buf[rt_len] = pHalData->rf_type;
 	rt_len += 1;
 
+	rt_len++;	// alignment
+#endif
 	/* RX flags */
 	rtap_hdr->it_present |= (1 << IEEE80211_RADIOTAP_RX_FLAGS);
 #if 0
@@ -3858,25 +3865,64 @@ static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe, 
 		rt_len += 2;
 	}
 
+	if (pattrib->physt) {
+		for(i=0; i<pHalData->NumTotalRFPath; i++) {
+			hdr_buf[rt_len] = pattrib->phy_info.RxPwr[i];
+			rt_len ++;
+			hdr_buf[rt_len] = i;
+			rt_len ++;
+		}
+	}
+
+#ifdef CONFIG_RADIOTAP_WITH_RXDESC
+	rt_len += rt_len&1;
+	hdr_buf[rt_len++] = 0xde;
+	hdr_buf[rt_len++] = 0xab;
+	hdr_buf[rt_len++] = 0xbe;
+	hdr_buf[rt_len++] = 0xaf;
+	hdr_buf[rt_len++] = 24;
+	hdr_buf[rt_len++] = 0;
+	_rtw_memcpy(hdr_buf + rt_len, pattrib->rxdesc, RXDESC_SIZE);
+	rt_len += RXDESC_SIZE;
+#endif
+
 	/* push to skb */
-	pskb = (_pkt *)buf;
+	/* read skb information from recv frame */
+	pskb = precvframe->u.hdr.pkt;
+	pskb->len = precvframe->u.hdr.len;
+	pskb->data = precvframe->u.hdr.rx_data;
+	skb_set_tail_pointer(pskb, precvframe->u.hdr.len);
+
 	if (skb_headroom(pskb) < rt_len) {
-		RTW_INFO("%s:%d %s headroom is too small.\n", __FILE__, __LINE__, __func__);
-		ret = _FAIL;
-		return ret;
+		pskb = skb_realloc_headroom(pskb, rt_len);
+		if(pskb == NULL) {
+			RTW_INFO("%s:%d %s headroom is too small.\n", __FILE__, __LINE__, __func__);
+			ret = _FAIL;
+			return ret;
+		}
+		precvframe->u.hdr.pkt = pskb;
 	}
 
 	ptr = skb_push(pskb, rt_len);
 	if (ptr) {
 		rtap_hdr->it_len = cpu_to_le16(rt_len);
-		memcpy(ptr, rtap_hdr, rt_len);
-	} else
+		_rtw_memcpy(ptr, rtap_hdr, rt_len);
+	} else {
 		ret = _FAIL;
+		return ret;
+	}
+out:
+	/* write skb information to recv frame */
+	skb_reset_mac_header(pskb);
+	precvframe->u.hdr.len = pskb->len;
+	precvframe->u.hdr.rx_data = pskb->data;
+	precvframe->u.hdr.rx_head = pskb->head;
+	precvframe->u.hdr.rx_tail = skb_tail_pointer(pskb);
+	precvframe->u.hdr.rx_end = skb_end_pointer(pskb);
 
 	return ret;
-
 }
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24))
+
 int recv_frame_monitor(_adapter *padapter, union recv_frame *rframe)
 {
 	int ret = _SUCCESS;
@@ -3885,26 +3931,13 @@ int recv_frame_monitor(_adapter *padapter, union recv_frame *rframe)
 	_queue *pfree_recv_queue = &padapter->recvpriv.free_recv_queue;
 	_pkt *pskb = NULL;
 
-	/* read skb information from recv frame */
-	pskb = rframe->u.hdr.pkt;
-	pskb->len = rframe->u.hdr.len;
-	pskb->data = rframe->u.hdr.rx_data;
-	skb_set_tail_pointer(pskb, rframe->u.hdr.len);
 
 	/* fill radiotap header */
-	if (fill_radiotap_hdr(padapter, rframe, (u8 *)pskb) == _FAIL) {
+	if (fill_radiotap_hdr(padapter, rframe) == _FAIL) {
 		ret = _FAIL;
 		rtw_free_recvframe(rframe, pfree_recv_queue); /* free this recv_frame */
 		goto exit;
 	}
-
-	/* write skb information to recv frame */
-	skb_reset_mac_header(pskb);
-	rframe->u.hdr.len = pskb->len;
-	rframe->u.hdr.rx_data = pskb->data;
-	rframe->u.hdr.rx_head = pskb->head;
-	rframe->u.hdr.rx_tail = skb_tail_pointer(pskb);
-	rframe->u.hdr.rx_end = skb_end_pointer(pskb);
 
 	if (!RTW_CANNOT_RUN(padapter)) {
 		/* indicate this recv_frame */
@@ -3923,7 +3956,7 @@ int recv_frame_monitor(_adapter *padapter, union recv_frame *rframe)
 exit:
 	return ret;
 }
-#endif
+
 int recv_func_prehandle(_adapter *padapter, union recv_frame *rframe)
 {
 	int ret = _SUCCESS;
@@ -4127,9 +4160,7 @@ int recv_func(_adapter *padapter, union recv_frame *rframe)
 
 	if (check_fwstate(mlmepriv, WIFI_MONITOR_STATE)) {
 		/* monitor mode */
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24))
 		recv_frame_monitor(padapter, rframe);
-#endif
 		ret = _SUCCESS;
 		goto exit;
 	} else
@@ -4444,9 +4475,9 @@ void rx_query_phy_status(
 	PADAPTER			padapter = precvframe->u.hdr.adapter;
 	struct rx_pkt_attrib	*pattrib = &precvframe->u.hdr.attrib;
 	HAL_DATA_TYPE		*pHalData = GET_HAL_DATA(padapter);
-	struct _odm_phy_status_info_	*pPHYInfo = (struct _odm_phy_status_info_ *)(&pattrib->phy_info);
+	PODM_PHY_INFO_T	pPHYInfo  = (PODM_PHY_INFO_T)(&pattrib->phy_info);
 	u8					*wlanhdr;
-	struct _odm_per_pkt_info_	pkt_info;
+	ODM_PACKET_INFO_T	pkt_info;
 	u8 *sa;
 	struct sta_priv *pstapriv;
 	struct sta_info *psta = NULL;
@@ -4454,28 +4485,28 @@ void rx_query_phy_status(
 	struct debug_priv *pdbgpriv = &psdpriv->drv_dbg;
 	/* _irqL		irqL; */
 
-	pkt_info.is_packet_match_bssid = _FALSE;
-	pkt_info.is_packet_to_self = _FALSE;
-	pkt_info.is_packet_beacon = _FALSE;
+	pkt_info.bPacketMatchBSSID = _FALSE;
+	pkt_info.bPacketToSelf = _FALSE;
+	pkt_info.bPacketBeacon = _FALSE;
 
 	wlanhdr = get_recvframe_data(precvframe);
 
-	pkt_info.is_packet_match_bssid = (!IsFrameTypeCtrl(wlanhdr))
+	pkt_info.bPacketMatchBSSID = (!IsFrameTypeCtrl(wlanhdr))
 			     && (!pattrib->icv_err) && (!pattrib->crc_err)
 		&& _rtw_memcmp(get_hdr_bssid(wlanhdr), get_bssid(&padapter->mlmepriv), ETH_ALEN);
 
-	pkt_info.is_to_self = (!pattrib->icv_err) && (!pattrib->crc_err)
+	pkt_info.bToSelf = (!pattrib->icv_err) && (!pattrib->crc_err)
 		&& _rtw_memcmp(get_ra(wlanhdr), adapter_mac_addr(padapter), ETH_ALEN);
 
-	pkt_info.is_packet_to_self = pkt_info.is_packet_match_bssid
+	pkt_info.bPacketToSelf = pkt_info.bPacketMatchBSSID
 		&& _rtw_memcmp(get_ra(wlanhdr), adapter_mac_addr(padapter), ETH_ALEN);
 
-	pkt_info.is_packet_beacon = pkt_info.is_packet_match_bssid
-				 && (get_frame_sub_type(wlanhdr) == WIFI_BEACON);
+	pkt_info.bPacketBeacon = pkt_info.bPacketMatchBSSID
+				 && (GetFrameSubType(wlanhdr) == WIFI_BEACON);
 
 	sa = get_ta(wlanhdr);
 
-	pkt_info.station_id = 0xFF;
+	pkt_info.StationID = 0xFF;
 
 	if (_rtw_memcmp(adapter_mac_addr(padapter), sa, ETH_ALEN) == _TRUE) {
 		static u32 start_time = 0;
@@ -4484,7 +4515,7 @@ void rx_query_phy_status(
 		if (IsFrameTypeCtrl(wlanhdr)) {
 			RTW_INFO("-->Control frame: Y\n");
 			RTW_INFO("-->pkt_len: %d\n", pattrib->pkt_len);
-			RTW_INFO("-->Sub Type = 0x%X\n", get_frame_sub_type(wlanhdr));
+			RTW_INFO("-->Sub Type = 0x%X\n", GetFrameSubType(wlanhdr));
 		}
 
 		/* Dump first 40 bytes of header */
@@ -4505,35 +4536,33 @@ void rx_query_phy_status(
 		pstapriv = &padapter->stapriv;
 		psta = rtw_get_stainfo(pstapriv, sa);
 		if (psta)
-			pkt_info.station_id = psta->mac_id;
+			pkt_info.StationID = psta->mac_id;
 	}
 
-	pkt_info.data_rate = pattrib->data_rate;
+	pkt_info.DataRate = pattrib->data_rate;
 
 	/* _enter_critical_bh(&pHalData->odm_stainfo_lock, &irqL); */
-	odm_phy_status_query(&pHalData->odmpriv, pPHYInfo, pphy_status, &pkt_info);
+	ODM_PhyStatusQuery(&pHalData->odmpriv, pPHYInfo, pphy_status, &pkt_info);
 	if (psta)
 		psta->rssi = pattrib->phy_info.RecvSignalPower;
 	/* _exit_critical_bh(&pHalData->odm_stainfo_lock, &irqL); */
 
 	{
 		precvframe->u.hdr.psta = NULL;
-		if (pkt_info.is_packet_match_bssid
+		if (pkt_info.bPacketMatchBSSID
 		    && (check_fwstate(&padapter->mlmepriv, WIFI_AP_STATE) == _TRUE)
 		   ) {
 			if (psta) {
 				precvframe->u.hdr.psta = psta;
 				rx_process_phy_info(padapter, precvframe);
 			}
-		} else if (pkt_info.is_packet_to_self || pkt_info.is_packet_beacon) {
+		} else if (pkt_info.bPacketToSelf || pkt_info.bPacketBeacon) {
 
 			if (psta)
 				precvframe->u.hdr.psta = psta;
 			rx_process_phy_info(padapter, precvframe);
 		}
 	}
-
-	rtw_odm_parse_rx_phy_status_chinfo(precvframe, pphy_status);
 }
 /*
 * Increase and check if the continual_no_rx_packet of this @param pmlmepriv is larger than MAX_CONTINUAL_NORXPACKET_COUNT
@@ -4585,52 +4614,3 @@ s32 pre_recv_entry(union recv_frame *precvframe, u8 *pphy_status)
 
 	return ret;
 }
-
-#ifdef CONFIG_RECV_THREAD_MODE
-thread_return rtw_recv_thread(thread_context context)
-{
-	_adapter *adapter = (_adapter *)context;
-	struct recv_priv *recvpriv = &adapter->recvpriv;
-	s32 err = _SUCCESS;
-#ifdef PLATFORM_LINUX
-	struct sched_param param = { .sched_priority = 1 };
-
-	sched_setscheduler(current, SCHED_FIFO, &param);
-#endif /* PLATFORM_LINUX */
-	thread_enter("RTW_RECV_THREAD");
-
-	RTW_INFO(FUNC_ADPT_FMT" enter\n", FUNC_ADPT_ARG(adapter));
-
-	do {
-		err = _rtw_down_sema(&recvpriv->recv_sema);
-		if (_FAIL == err) {
-			RTW_ERR(FUNC_ADPT_FMT" down recv_sema fail!\n", FUNC_ADPT_ARG(adapter));
-			goto exit;
-		}
-
-		if (RTW_CANNOT_RUN(adapter)) {
-			RTW_INFO(FUNC_ADPT_FMT" DS:%d, SR:%d\n", FUNC_ADPT_ARG(adapter)
-				, rtw_is_drv_stopped(adapter), rtw_is_surprise_removed(adapter));
-			goto exit;
-		}
-
-		err = rtw_hal_recv_hdl(adapter);
-
-		if (err == RTW_RFRAME_UNAVAIL
-			|| err == RTW_RFRAME_PKT_UNAVAIL
-		) {
-			rtw_msleep_os(1);
-			_rtw_up_sema(&recvpriv->recv_sema);
-		}
-
-		flush_signals_thread();
-
-	} while (err != _FAIL);
-
-exit:
-	_rtw_up_sema(&adapter->recvpriv.terminate_recvthread_sema);
-	RTW_INFO(FUNC_ADPT_FMT" exit\n", FUNC_ADPT_ARG(adapter));
-	thread_exit();
-}
-#endif /* CONFIG_RECV_THREAD_MODE */
-

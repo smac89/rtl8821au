@@ -21,6 +21,22 @@
 #include <drv_types.h>
 #include <hal_data.h>
 
+void
+rtw_led_control(
+    _adapter *adapter,
+    LED_CTL_MODE LedAction
+    )
+{
+    if (adapter->registrypriv.led_enable)
+    {
+        do
+        {
+            (adapter)->ledpriv.LedControlHandler((adapter), (LedAction));
+        }
+        while(0);
+    }
+}
+
 /*
  *	Description:
  *		Implementation of LED blinking behavior.
@@ -3413,7 +3429,7 @@ SwLedControlMode10(
 			if (pLed->bLedWPSBlinkInProgress == _TRUE || pLed1->bLedWPSBlinkInProgress == _TRUE)
 				;
 			else {
-				if (pHalData->current_band_type == BAND_ON_2_4G)
+				if (pHalData->CurrentBandType == BAND_ON_2_4G)
 					/* LED0 settings */
 				{
 					pLed->CurrLedState = RTW_LED_ON;
@@ -3427,7 +3443,7 @@ SwLedControlMode10(
 					pLed1->CurrLedState = RTW_LED_OFF;
 					pLed1->BlinkingLedState = RTW_LED_OFF;
 					_set_timer(&(pLed1->BlinkTimer), 0);
-				} else if (pHalData->current_band_type == BAND_ON_5G)
+				} else if (pHalData->CurrentBandType == BAND_ON_5G)
 					/* LED1 settings */
 				{
 					pLed1->CurrLedState = RTW_LED_ON;
@@ -3523,7 +3539,7 @@ SwLedControlMode10(
 		break;
 
 	case LED_CTL_STOP_WPS:	/* WPS connect success */
-		if (pHalData->current_band_type == BAND_ON_2_4G)
+		if (pHalData->CurrentBandType == BAND_ON_2_4G)
 			/* LED0 settings */
 		{
 			pLed->bLedWPSBlinkInProgress = _FALSE;
@@ -3538,7 +3554,7 @@ SwLedControlMode10(
 			pLed1->CurrLedState = RTW_LED_OFF;
 			pLed1->BlinkingLedState = RTW_LED_OFF;
 			_set_timer(&(pLed1->BlinkTimer), 0);
-		} else if (pHalData->current_band_type == BAND_ON_5G)
+		} else if (pHalData->CurrentBandType == BAND_ON_5G)
 			/* LED1 settings */
 		{
 			pLed1->bLedWPSBlinkInProgress = _FALSE;
