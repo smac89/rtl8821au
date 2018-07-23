@@ -1,0 +1,55 @@
+#!/bin/bash
+
+set -e
+
+echo "##################################################"
+echo "Realtek Wi-Fi driver Auto Uninstall Script"
+echo "November, 21 2011 v1.1.0"
+echo "##################################################"
+
+################################################################################
+#			Check for root. Exit if not root
+################################################################################
+if ! [ $EUID = 0 ]; then
+    echo -e "\nScript should be run as \e[1;91mroot\e[0m!!"
+    exit 1
+fi
+
+################################################################################
+#			Read the module info from the dkms script
+################################################################################
+DRV_NAME=
+DRV_VERSION=
+DRV_MODNAME=
+
+PREV_IFS="${IFS}"
+IFS='='
+while read -r name value; do
+    clean_value="${value//\"/}"
+    case "$name" in
+        'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
+        'PACKAGE_VERSION') DRV_VERSION="$clean_value" ;;
+        'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
+        'BUILT_MODULE_NAME[0]') if [ -z "$DRV_MODNAME" ]; then DRV_MODNAME="$clean_value"; fi ;;
+    esac
+done <<< "$(cat 'dkms.conf')"
+
+if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" || -z "$DRV_MODNAME" ]]; then
+    echo 'Could not read module info from dkms.conf. Make sure it exists'
+    exit 1
+fi
+
+IFS="${PREV_IFS}"
+
+################################################################################
+#            Uninstall the module
+################################################################################
+dkms remove -m ${DRV_NAME} -v ${DRV_VERSION} --all
+rm -rf /usr/src/${DRV_NAME}-${DRV_VERSION}
+rmmod ${DRV_MODNAME}
+
+echo "##################################################"
+echo -e "The Uninstall Script is \e[32mcompleted!\e[0m"
+echo "##################################################"
+
+set +e
