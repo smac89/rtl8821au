@@ -4,3 +4,4 @@ README.md       export-ignore
 cmake*/**       export-ignore
 .idea/          export-ignore
 dkms_*.sh       export-ignore
+*               core.eol=auto
