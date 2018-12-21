@@ -1,4 +1,4 @@
-# Realtek RTL8812AU Driver
+# Realtek RTL8812AU Driver (Kernels >= 4.15)
 
 **NOTE: The contents of this branch were copied verbatim from https://github.com/zebulon2/rtl8812au
 in order to have a working driver version for kernel version >= 4.15.**
