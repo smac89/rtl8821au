@@ -3,7 +3,7 @@
 DRV_NAME=
 DRV_VERSION=
 
-set -ev
+set -e
 
 while IFS='=' read -r name value; do
     clean_value="${value//\"/}"
