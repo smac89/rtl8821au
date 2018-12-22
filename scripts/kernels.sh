@@ -15,6 +15,4 @@ for linux_header in $HEADERS; do
     fi
 done
 
-echo -e "The following headers were installed:\n${HEADERS}"
-
-set +e
+echo -e "\n\nThe following headers were installed:\n${HEADERS}"

@@ -22,9 +22,7 @@ DRV_NAME=
 DRV_VERSION=
 DRV_MODNAME=
 
-PREV_IFS="${IFS}"
-IFS='='
-while read -r name value; do
+while IFS='=' read -r name value; do
     clean_value="${value//\"/}"
     case "$name" in
         'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
@@ -38,8 +36,6 @@ if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" || -z "$DRV_MODNAME" ]]; then
     echo 'Could not read module info from dkms.conf. Make sure it exists'
     exit 1
 fi
-
-IFS="${PREV_IFS}"
 
 ################################################################################
 #            Copy the driver sources to the /usr/src
@@ -64,5 +60,3 @@ if ! $TRAVIS; then
     echo -e "The Install Script is \e[32mcompleted!\e[0m"
     echo "##################################################"
 fi
-
-set +e
