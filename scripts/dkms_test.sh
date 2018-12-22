@@ -15,6 +15,4 @@ done <<< "$(cat 'dkms.conf')"
 
 IFS="${PREV_IFS}"
 
-dkms add -m ${DRV_NAME} -v ${DRV_VERSION} --all
-dkms build -m ${DRV_NAME} -v ${DRV_VERSION} --all
-dkms install -m ${DRV_NAME} -v ${DRV_VERSION} --all
+dkms install "${DRV_NAME}/${DRV_VERSION}" --all

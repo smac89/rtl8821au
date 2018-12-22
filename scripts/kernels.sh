@@ -1,13 +1,20 @@
 #!/bin/bash
 
-set -x
+set -e
 
 HEADERS=$(apt-cache search '^linux-image-[0-9]\.[0-9]+\.0-[0-9]+.+generic$' --names-only | sort --version-sort --reverse | sed -r 's/(.+?) \- .*/\1/' | sort --field-separator='-' --ignore-case --unique --key=1,3)
 
+IGNORED_HEADERS="$(cat <<'EOF'
+
+EOF
+)"
+
 for linux_header in $HEADERS; do
-    apt install $linux_header --quiet -y
+    if ! [[ $IGNORED_HEADERS =~ "$linux_header" ]]; then
+        apt install $linux_header --quiet -y
+    fi
 done
 
 echo -e "The following headers were installed:\n${HEADERS}"
 
-set +x
+set +e
