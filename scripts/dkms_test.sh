@@ -11,7 +11,9 @@ while IFS='=' read -r name value; do
         'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
         'PACKAGE_VERSION') DRV_VERSION="$clean_value" ;;
     esac
-done <<< "$(cat dkms.conf)"
+done < 'dkms.conf'
 
-dkms status --all
-dkms install "${DRV_NAME}/${DRV_VERSION}" --all
+for linux_header in "$(cat $INSTALLED_HEADERS)"; do
+    dkms status -k "$linux_header"
+    dkms install "${DRV_NAME}/${DRV_VERSION}" -k "$linux_header"
+done
