@@ -12,7 +12,9 @@ addons:
 
 before_install: sudo ./install.sh
 
-script: sudo ./scripts/kernels.sh 
+install: sudo ./scripts/kernels.sh
+
+script: sudo ./scripts/dkms_test.sh
 
 matrix:
   fast_finish: true
