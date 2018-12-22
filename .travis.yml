@@ -1,12 +1,17 @@
 dist: xenial
 sudo: required
+
 git:
   depth: 15
+
 addons:
   apt:
     packages:
     - 
-script: sudo apt-cache search 'linux-image'
+
+before_install: ./install.sh
+
+script: ./scripts/kernels.sh 
 
 matrix:
   fast_finish: true
