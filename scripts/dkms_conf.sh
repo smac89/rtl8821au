@@ -10,4 +10,4 @@ while IFS='=' read -r name value; do
         'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
         'BUILT_MODULE_NAME[0]') if [ -z "$DRV_MODNAME" ]; then DRV_MODNAME="$clean_value"; fi ;;
     esac
-done < $(readlink -f '../dkms.conf')
+done < "$(dirname $(readlink -f $BASH_SOURCE))/../dkms.conf"
