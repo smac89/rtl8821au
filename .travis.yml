@@ -9,6 +9,7 @@ addons:
   apt:
     packages:
     - dkms
+    - build-essential
 
 env:
   global:
@@ -18,7 +19,7 @@ before_install: sudo ./install.sh
 
 install: sudo ./scripts/kernels.sh
 
-script: sudo ./scripts/dkms_test.sh
+script: sudo ./scripts/dkms_test.sh 
 
 matrix:
   fast_finish: true
