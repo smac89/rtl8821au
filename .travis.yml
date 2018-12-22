@@ -1,3 +1,4 @@
+language: shell
 dist: xenial
 sudo: required
 
