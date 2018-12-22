@@ -11,7 +11,7 @@ EOF
 
 for linux_header in $HEADERS; do
     if ! [[ $IGNORED_HEADERS =~ "$linux_header" ]]; then
-        apt install $linux_header --quiet -y
+        apt --quiet install $linux_header --yes
     fi
 done
 

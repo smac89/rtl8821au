@@ -15,4 +15,5 @@ done <<< "$(cat 'dkms.conf')"
 
 IFS="${PREV_IFS}"
 
+dkms status --all
 dkms install "${DRV_NAME}/${DRV_VERSION}" --all
