@@ -54,7 +54,7 @@ git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /u
 ################################################################################
 
 # Don't install the drivers on travis
-if ! $TRAVIS then
+if ! $TRAVIS; then
     dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
     dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
     dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
