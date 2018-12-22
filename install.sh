@@ -47,7 +47,6 @@ IFS="${PREV_IFS}"
 echo -e "Archiving the current repository"
 
 mkdir -p /usr/src/"${DRV_NAME}-${DRV_VERSION}"
-branch="$(git symbolic-ref --short HEAD)"
 git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /usr/src/"${DRV_NAME}-${DRV_VERSION}"
 
 ################################################################################
