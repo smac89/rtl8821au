@@ -11,7 +11,7 @@ while read -r name value; do
         'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
         'PACKAGE_VERSION') DRV_VERSION="$clean_value" ;;
     esac
-done <<< "$(cat "dkms.conf')"
+done <<< "$(cat 'dkms.conf')"
 
 IFS="${PREV_IFS}"
 
