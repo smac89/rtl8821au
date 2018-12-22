@@ -6,6 +6,7 @@ HEADERS=$(apt-cache search '^linux-headers-[0-9]\.[0-9]+\.0-[0-9]+.+generic$' --
 
 IGNORED_VERSIONS="$(cat <<'EOF'
 4.10.0-42-generic
+4.11.0-14-generic
 EOF
 )"
 
