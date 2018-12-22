@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 DRV_NAME=
 DRV_VERSION=
 
@@ -15,7 +17,7 @@ done <<< "$(cat dkms.conf)"
 
 IFS="${PREV_IFS}"
 
-echo "driver/version: ${DRV_NAME}/${DRV_VERSION}"
-
 dkms status --all
 dkms install "${DRV_NAME}/${DRV_VERSION}" --all
+
+set +e
