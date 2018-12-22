@@ -19,7 +19,9 @@ before_install: sudo ./install.sh
 
 install: sudo ./scripts/kernels.sh
 
-script: sudo ./scripts/dkms_test.sh 
+script: sudo ./scripts/dkms_test.sh
+
+after_failure: sudo ./scripts/failure.sh
 
 matrix:
   fast_finish: true

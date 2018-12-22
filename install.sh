@@ -18,19 +18,11 @@ fi
 ################################################################################
 #			Read the module info from the dkms script
 ################################################################################
-DRV_NAME=
-DRV_VERSION=
-DRV_MODNAME=
 
-while IFS='=' read -r name value; do
-    clean_value="${value//\"/}"
-    case "$name" in
-        'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
-        'PACKAGE_VERSION') DRV_VERSION="$clean_value" ;;
-        'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
-        'BUILT_MODULE_NAME[0]') if [ -z "$DRV_MODNAME" ]; then DRV_MODNAME="$clean_value"; fi ;;
-    esac
-done < 'dkms.conf'
+# DRV_NAME=
+# DRV_VERSION=
+# DRV_MODNAME=
+source scripts/dkms_conf.sh
 
 if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" || -z "$DRV_MODNAME" ]]; then
     echo 'Could not read module info from dkms.conf. Make sure it exists'
