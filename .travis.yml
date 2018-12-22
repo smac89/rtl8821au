@@ -9,9 +9,9 @@ addons:
     packages:
     - 
 
-before_install: ./install.sh
+before_install: sudo ./install.sh
 
-script: ./scripts/kernels.sh 
+script: sudo ./scripts/kernels.sh 
 
 matrix:
   fast_finish: true
