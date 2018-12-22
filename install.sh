@@ -52,13 +52,17 @@ git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /u
 ################################################################################
 #			Start dkms
 ################################################################################
-dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
-dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
-dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
-modprobe ${DRV_MODNAME} --verbose -S $(uname -r)
 
-echo "##################################################"
-echo -e "The Install Script is \e[32mcompleted!\e[0m"
-echo "##################################################"
+# Don't install the drivers on travis
+if ! $TRAVIS then
+    dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
+    dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
+    dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
+    modprobe ${DRV_MODNAME} --verbose -S $(uname -r)
+
+    echo "##################################################"
+    echo -e "The Install Script is \e[32mcompleted!\e[0m"
+    echo "##################################################"
+fi
 
 set +e
