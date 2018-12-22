@@ -7,7 +7,7 @@ git:
 addons:
   apt:
     packages:
-    - 
+    - dkms
 
 before_install: sudo ./install.sh
 
