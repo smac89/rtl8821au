@@ -1,5 +1,5 @@
 # Contributing
-Thanks for taking the time to contribute to this small project
+Thanks for taking the time to contribute to this project
 
 ## Pull Request Process
 1. Fork **driver-\<version>** branch you want

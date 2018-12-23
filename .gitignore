@@ -76,9 +76,6 @@ Mkfile.old
 .idea/**/gradle.xml
 .idea/**/libraries
 
-# CMake
-cmake-build-debug/
-
 # Mongo Explorer plugin:
 .idea/**/mongoSettings.xml
 
@@ -128,6 +125,7 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+cmake-build-debug/
 build
 
 ### Linux ###
@@ -147,3 +145,5 @@ build
 
 
 # End of https://www.gitignore.io/api/c,linux,clion,cmake
+
+*.mk

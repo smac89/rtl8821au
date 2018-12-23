@@ -1,0 +1,29 @@
+language: shell
+dist: xenial
+sudo: required
+
+git:
+  depth: 15
+
+addons:
+  apt:
+    packages:
+    - dkms
+    - build-essential
+
+env:
+  global:
+    - INSTALLED_HEADERS=/tmp/installed_kernels.txt
+
+install: sudo ./scripts/kernels.sh
+
+before_script: sudo ./install.sh || true
+
+script:
+  - source scripts/dkms_conf.sh dkms.conf
+  - sudo ./scripts/dkms_test.sh
+
+after_failure: cat "/var/lib/dkms/$DRV_NAME/$DRV_VERSION/build/make.log" || true
+
+matrix:
+  fast_finish: true
