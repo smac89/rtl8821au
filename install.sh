@@ -22,9 +22,7 @@ DRV_NAME=
 DRV_VERSION=
 DRV_MODNAME=
 
-PREV_IFS="${IFS}"
-IFS='='
-while read -r name value; do
+while IFS='=' read -r name value; do
     clean_value="${value//\"/}"
     case "$name" in
         'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
@@ -32,14 +30,12 @@ while read -r name value; do
         'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
         'BUILT_MODULE_NAME[0]') if [ -z "$DRV_MODNAME" ]; then DRV_MODNAME="$clean_value"; fi ;;
     esac
-done <<< "$(cat 'dkms.conf')"
+done < 'dkms.conf'
 
 if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" || -z "$DRV_MODNAME" ]]; then
     echo 'Could not read module info from dkms.conf. Make sure it exists'
     exit 1
 fi
-
-IFS="${PREV_IFS}"
 
 ################################################################################
 #            Copy the driver sources to the /usr/src
@@ -47,19 +43,17 @@ IFS="${PREV_IFS}"
 echo -e "Archiving the current repository"
 
 mkdir -p /usr/src/"${DRV_NAME}-${DRV_VERSION}"
-branch="$(git symbolic-ref --short HEAD)"
 git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /usr/src/"${DRV_NAME}-${DRV_VERSION}"
 
 ################################################################################
 #			Start dkms
 ################################################################################
-dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
-dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
-dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k 4.15.0-24-generic
-modprobe ${DRV_MODNAME} --verbose -S 4.15.0-24-generic
+
+dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
+dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
+dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
+modprobe ${DRV_MODNAME} --verbose -S $(uname -r)
 
 echo "##################################################"
 echo -e "The Install Script is \e[32mcompleted!\e[0m"
 echo "##################################################"
-
-set +e

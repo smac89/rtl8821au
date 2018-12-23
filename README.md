@@ -2,8 +2,21 @@
 
 ### This repository contains drivers for `RTL8821au`.
 
+<details open>
+<summary>
+<img src="https://travis-ci.com/smac89/rtl8821au.svg?branch=staging-5.2.6.2_23547.20170814_COEX20170206-6760" alt="Build Status">
+<a href="https://travis-ci.com/smac89/rtl8821au" target="_blank"></a>
+</img>
+</summary>
+4.4.0-141-generic<br/>
+4.8.0-58-generic<br/>
+4.10.0-42-generic<br/>
+4.11.0-14-generic<br/>
+4.13.0-45-generic
+</details>
+
 #### Supports kernel versions
-- 2.4 ➜ 4.13 - only tested `4.13`, *but should theoretically work for as early as **2.4***
+- 2.4 ➜ 4.13 - only tested v4+ (See above travis status), *but should theoretically work for as early as **2.4***
 
 #### Compiled successfully on
 - Ubuntu 16.04/4.13.0-39-generic
