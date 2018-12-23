@@ -23,7 +23,7 @@ script:
   - source scripts/dkms_conf.sh dkms.conf
   - sudo ./scripts/dkms_test.sh
 
-after_failure: cat "/var/lib/dkms/$DRV_NAME/$DRV_VERSION/build/make.log"
+after_failure: cat "/var/lib/dkms/$DRV_NAME/$DRV_VERSION/build/make.log" || true
 
 matrix:
   fast_finish: true
