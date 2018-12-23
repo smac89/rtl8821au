@@ -2,8 +2,6 @@
 
 set -e
 
-echo "${DRV_NAME}/${DRV_VERSION}"
-
 for linux_header in "$(cat $INSTALLED_HEADERS)"; do
     dkms status -k "$linux_header"
 

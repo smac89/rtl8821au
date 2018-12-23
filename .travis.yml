@@ -15,13 +15,13 @@ env:
   global:
     - INSTALLED_HEADERS=/tmp/installed_kernels.txt
 
-install: sudo ./install.sh || true
+install: sudo ./scripts/kernels.sh
 
-before_script:
+before_script: sudo ./install.sh || true
+
+script:
   - source scripts/dkms_conf.sh dkms.conf
-  - sudo ./scripts/kernels.sh
-
-script: sudo ./scripts/dkms_test.sh
+  - sudo ./scripts/dkms_test.sh
 
 after_failure: cat "/var/lib/dkms/$DRV_NAME/$DRV_VERSION/build/make.log"
 
