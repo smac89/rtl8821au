@@ -4,14 +4,18 @@ set -e
 
 HEADERS=$(apt-cache search '^linux-headers-[0-9]\.[0-9]+\.0-[0-9]+.+generic$' --names-only | sort --version-sort --reverse | sed -r 's/(.+?) \- .*/\1/' | sort --field-separator='-' --ignore-case --unique --key=1,3)
 
-IGNORED_VERSIONS="$(cat <<'EOF'
+KERNEL_TEST_VERSIONS"$(cat <<'EOF'
+EOF
+)"
+
+KERNEL_IGNORED_VERSIONS="$(cat <<'EOF'
 4.15.0-43-generic
 EOF
 )"
 
 for linux_header in $HEADERS; do
     header_version="${linux_header//linux-headers-/}"
-    if ! [[ $IGNORED_VERSIONS =~ "$header_version" ]]; then
+    if ! [[ "${KERNEL_IGNORED_VERSIONS[@]}" =~ "$header_version" ]]; then
         apt --quiet install $linux_header --yes 1>&2
         echo "$header_version"
     fi
