@@ -9,7 +9,6 @@ EOF
 )"
 
 KERNEL_IGNORED_VERSIONS="$(cat <<'EOF'
-4.15.0-43-generic
 EOF
 )"
 
