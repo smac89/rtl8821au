@@ -39,7 +39,6 @@ As root run the following:
 - modprobe 8821au --verbose
 
 ---
-
 #### Thanks to
 - [diederikdehaas](https://github.com/diederikdehaas) for the changes necessary for compiling on kernel versions greater than 4.12. See his [rtl8812au](https://github.com/diederikdehaas/rtl8812AU) repo
 - [masterzorag's PR commit](https://github.com/masterzorag/RTL8192EU-linux/pull/4/commits/6833e247c0b5f32b736c30c8935ef9a709544bc4) for pointing me in the right direction
