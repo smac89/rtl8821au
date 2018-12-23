@@ -17,7 +17,7 @@
 </details>
 
 #### Supports kernel versions
-- 2.4 ➜ 4.13 - only *installed* on v4+ (See above travis status), *but should theoretically work for as early as **2.4***
+- 2.4 ➜ 4.15 - only *installed* on v4+ (See above travis status), *but should theoretically work for as early as **2.4***
 
 #### Compiled successfully on
 - Ubuntu 16.04/4.13.0-39-generic
@@ -41,3 +41,6 @@ As root run the following:
 #### Useful links
 - [How to build a kernel module](http://xmodulo.com/build-kernel-module-dkms-linux.html)
 - [Generate a deb for the driver](https://wiki.kubuntu.org/Kernel/Dev/DKMSPackaging#Generate_DKMS_deb)
+
+## TODO
+- Find a way to download and test arbitrary kernels
