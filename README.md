@@ -2,6 +2,8 @@
 
 ### This repository contains drivers for `RTL8821au`.
 
+---
+
 <details open>
 <summary>
 <img src="https://travis-ci.com/smac89/rtl8821au.svg?branch=staging-5.2.6.2_23547.20170814_COEX20170206-6760" alt="Build Status">
@@ -22,16 +24,21 @@
 #### Compiled successfully on
 - Ubuntu 16.04/4.13.0-39-generic
 
-#### Installation (Auto)
+---
+### Installation
+
+#### Auto
 - Requires `dkms`
 - Simply run `install.sh` as root
 
-#### Installation (Manual)
+#### Manual
 As root run the following:
 - make clean
 - make
 - make install
 - modprobe 8821au --verbose
+
+---
 
 #### Thanks to
 - [diederikdehaas](https://github.com/diederikdehaas) for the changes necessary for compiling on kernel versions greater than 4.12. See his [rtl8812au](https://github.com/diederikdehaas/rtl8812AU) repo
@@ -42,5 +49,6 @@ As root run the following:
 - [How to build a kernel module](http://xmodulo.com/build-kernel-module-dkms-linux.html)
 - [Generate a deb for the driver](https://wiki.kubuntu.org/Kernel/Dev/DKMSPackaging#Generate_DKMS_deb)
 
-## TODO
+---
+### TODO
 - Find a way to download and test arbitrary kernels
