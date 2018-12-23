@@ -18,11 +18,19 @@ fi
 ################################################################################
 #			Read the module info from the dkms script
 ################################################################################
+DRV_NAME=
+DRV_VERSION=
+DRV_MODNAME=
 
-# DRV_NAME=
-# DRV_VERSION=
-# DRV_MODNAME=
-source scripts/dkms_conf.sh
+while IFS='=' read -r name value; do
+    clean_value="${value//\"/}"
+    case "$name" in
+        'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
+        'PACKAGE_VERSION') DRV_VERSION="$clean_value" ;;
+        'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
+        'BUILT_MODULE_NAME[0]') if [ -z "$DRV_MODNAME" ]; then DRV_MODNAME="$clean_value"; fi ;;
+    esac
+done < 'dkms.conf'
 
 if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" || -z "$DRV_MODNAME" ]]; then
     echo 'Could not read module info from dkms.conf. Make sure it exists'
@@ -41,14 +49,11 @@ git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /u
 #			Start dkms
 ################################################################################
 
-# Don't install the drivers on travis
-if ! $TRAVIS; then
-    dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
-    dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
-    dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
-    modprobe ${DRV_MODNAME} --verbose -S $(uname -r)
+dkms add -m ${DRV_NAME} -v ${DRV_VERSION} --all
+dkms build -m ${DRV_NAME} -v ${DRV_VERSION} --all
+dkms install -m ${DRV_NAME} -v ${DRV_VERSION} --all
+modprobe ${DRV_MODNAME} --verbose
 
-    echo "##################################################"
-    echo -e "The Install Script is \e[32mcompleted!\e[0m"
-    echo "##################################################"
-fi
+echo "##################################################"
+echo -e "The Install Script is \e[32mcompleted!\e[0m"
+echo "##################################################"
