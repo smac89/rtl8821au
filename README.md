@@ -4,7 +4,9 @@
 
 <details open>
 <summary>
-[![Build Status](https://travis-ci.com/smac89/rtl8821au.svg?branch=staging-5.2.6.2_23547.20170814_COEX20170206-6760)](https://travis-ci.com/smac89/rtl8821au)
+<img src="https://travis-ci.com/smac89/rtl8821au.svg?branch=staging-5.2.6.2_23547.20170814_COEX20170206-6760" alt="Build Status">
+<a href="https://travis-ci.com/smac89/rtl8821au" target="_blank"></a>
+</img>
 </summary>
 4.4.0-141-generic<br/>
 4.8.0-58-generic<br/>
