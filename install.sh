@@ -46,9 +46,8 @@ mkdir -p /usr/src/"${DRV_NAME}-${DRV_VERSION}"
 git archive --format=tar.gz --worktree-attributes --verbose HEAD | tar -xz -C /usr/src/"${DRV_NAME}-${DRV_VERSION}"
 
 ################################################################################
-#			Start dkms
+#			Install the module
 ################################################################################
-
 dkms add -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
 dkms build -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
 dkms install -m ${DRV_NAME} -v ${DRV_VERSION} -k $(uname -r)
