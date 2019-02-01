@@ -23,8 +23,8 @@ DRV_MODNAME=
 PREV_IFS="${IFS}"
 IFS='='
 while read -r name value; do
+    clean_value="${value//\"/}"
     case "$name" in
-        clean_value="${value//\"/}"
         'PACKAGE_NAME') DRV_NAME="$clean_value" ;;
         'PACKAGE_VERSION') DRV_VERSION="$clean_value" ;;
         'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
