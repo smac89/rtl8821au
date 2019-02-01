@@ -30,7 +30,7 @@ while read -r name value; do
         'DEST_MODULE_NAME[0]') DRV_MODNAME="$clean_value" ;;
         'BUILT_MODULE_NAME[0]') if [ -z "$DRV_MODNAME" ]; then DRV_MODNAME="$clean_value"; fi ;;
     esac
-done <<< "$(cat 'dkms.conf')"
+done < 'dkms.conf'
 
 if [[ -z "$DRV_NAME" || -z "$DRV_VERSION" || -z "$DRV_MODNAME" ]]; then
     echo 'Could not read module info from dkms.conf. Make sure it exists'
@@ -43,8 +43,10 @@ IFS="${PREV_IFS}"
 #            Uninstall the module
 ################################################################################
 dkms remove -m ${DRV_NAME} -v ${DRV_VERSION} --all
-modprobe -r ${DRV_MODNAME}
-rmmod ${DRV_MODNAME}
+if modinfo ${DRV_MODNAME} > /dev/null 2>&1; then
+    modprobe -r ${DRV_MODNAME}
+    rmmod ${DRV_MODNAME}
+fi
 
 echo "##################################################"
 echo -e "The Uninstall Script is \e[32mcompleted!\e[0m"
